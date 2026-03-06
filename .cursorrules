@@ -1,0 +1,18 @@
+## OOP Enforcement
+
+All Python code must follow the four pillars of OOP:
+
+1. Encapsulation: Use private/protected attributes (prefix with _ or __). Never access or modify object data directly — always use getter/setter methods or properties. Keep internal logic hidden from outside classes.
+
+2. Abstraction: Expose only what's necessary through clean, simple interfaces. Complex logic should be handled internally within the class. Use abstract base classes (ABC) when defining shared interfaces across related classes.
+
+3. Inheritance: Use parent classes to define shared behavior. Child classes should extend or specialize, not duplicate. Favor single inheritance and keep hierarchies shallow.
+
+4. Polymorphism: Methods with the same name should behave appropriately for their class. Use method overriding in child classes. Write functions that operate on parent types so they work with any subclass.
+
+General rules:
+- Every major feature or entity (Coach, Athlete, Team, Workout, etc.) should be its own class.
+- No loose functions floating outside of classes unless they are utility/helper functions.
+- All classes must have a clear single responsibility.
+- Use type hints on all method signatures.
+- Include docstrings on every class and public method.
