@@ -16,3 +16,27 @@ General rules:
 - All classes must have a clear single responsibility.
 - Use type hints on all method signatures.
 - Include docstrings on every class and public method.
+
+## Project Structure
+- All routes go in app.py or separate blueprint files
+- All HTML templates go in the templates/ folder
+- All CSS, JS, and images go in the static/ folder
+- Database models go in models.py
+- Keep configuration in config.py
+
+## Naming Conventions
+- Files: lowercase with underscores (athlete_routes.py)
+- Classes: PascalCase (AthleteProfile)
+- Functions/variables: snake_case (get_roster)
+- Templates: match their route name (roster.html for /roster)
+
+## Code Quality
+- No hardcoded values — use constants or config variables
+- Add comments explaining why, not what
+- Keep functions short — if it's over 30 lines, break it up
+- Handle errors gracefully — no bare except blocks
+
+## Git Workflow
+- Pull before you start coding
+- Commit often with clear messages
+- Never push broken code to main
