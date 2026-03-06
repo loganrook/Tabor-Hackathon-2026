@@ -40,3 +40,10 @@ General rules:
 - Pull before you start coding
 - Commit often with clear messages
 - Never push broken code to main
+
+## Flask Specific
+- Every route must have a docstring explaining what it does
+- Use Flask blueprints if app.py gets over 150 lines
+- All forms must validate input before touching the database
+- Use flash messages for user feedback (success, errors)
+- Keep database queries in models.py, not in routes
