@@ -87,8 +87,7 @@ def create_app(config_class=Config):
 
     @app.route("/")
     def index():
-        """Serve the homepage."""
-        # TODO: implement — e.g. redirect to login or show landing
+        """Serve the homepage (templates/home.html). Shows Login + Sign Up for guests."""
         return render_template("home.html")
 
     @app.route("/login", methods=["GET", "POST"])
