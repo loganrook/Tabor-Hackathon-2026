@@ -1,0 +1,40 @@
+{# edit_assignment.html — Same form as create but pre-filled. #}
+{% extends "base.html" %}
+{% block title %}Edit assignment — {{ team.name }}{% endblock %}
+{% block content %}
+<div class="auth-card">
+    <h1>Edit assignment</h1>
+    <form action="{{ url_for('edit_assignment', assignment_id=assignment.id) }}" method="post">
+        <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" value="{{ assignment.title }}" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Description (optional)</label>
+            <textarea id="description" name="description">{{ assignment.description or '' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="assign_to">Assign to</label>
+            <select id="assign_to" name="assign_to">
+                <option value="" {{ 'selected' if not assignment.group_id and not assignment.athlete_id else '' }}>Entire Team</option>
+                {% for g in groups %}
+                <option value="g{{ g.id }}" {{ 'selected' if assignment.group_id == g.id else '' }}>{{ g.name }}</option>
+                {% endfor %}
+                {% if athletes %}
+                <optgroup label="Individual">
+                    {% for a in athletes %}
+                    <option value="a{{ a.id }}" {{ 'selected' if assignment.athlete_id == a.id else '' }}>{{ a.name }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endif %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="due_date">Due date (optional)</label>
+            <input type="date" id="due_date" name="due_date" value="{{ assignment.due_date.strftime('%Y-%m-%d') if assignment.due_date else '' }}">
+        </div>
+        <button type="submit" class="btn-primary">Save changes</button>
+    </form>
+    <p class="auth-footer"><a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="back-link">← Back to team</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{# edit_announcement.html — Edit announcement content. #}
+{% extends "base.html" %}
+{% block title %}Edit announcement — {{ team.name }}{% endblock %}
+{% block content %}
+<div class="auth-card">
+    <h1>Edit announcement</h1>
+    <form action="{{ url_for('edit_announcement', announcement_id=announcement.id) }}" method="post">
+        <div class="form-group">
+            <label for="content">Content</label>
+            <textarea id="content" name="content" rows="4" required>{{ announcement.content }}</textarea>
+        </div>
+        <button type="submit" class="btn-primary">Save changes</button>
+    </form>
+    <p class="auth-footer"><a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="back-link">← Back to team</a></p>
+</div>
+{% endblock %}

@@ -135,7 +135,7 @@ class Group(db.Model):
 
 
 class Announcement(db.Model):
-    """Announcement: posted by a coach for a team."""
+    """Announcement: posted by a coach for a team (or auto-generated)."""
 
     __tablename__ = "announcements"
 
@@ -144,6 +144,7 @@ class Announcement(db.Model):
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=_local_now)
+    is_auto = db.Column(db.Boolean, default=False)
 
 
 class Assignment(db.Model):
