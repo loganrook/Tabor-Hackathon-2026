@@ -78,6 +78,14 @@ class Team(db.Model):
         foreign_keys="Assignment.team_id",
     )
 
+    # One team has many announcements
+    announcements = db.relationship(
+        "Announcement",
+        backref="team",
+        lazy="dynamic",
+        foreign_keys="Announcement.team_id",
+    )
+
     @classmethod
     def generate_invite_code(cls) -> str:
         """Generate a random 8-character invite code that is unique in the database."""
@@ -88,6 +96,18 @@ class Team(db.Model):
         raise RuntimeError("Could not generate unique invite code")
 
 
+class Announcement(db.Model):
+    """Announcement: posted by a coach for a team."""
+
+    __tablename__ = "announcements"
+
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class Assignment(db.Model):
     """Assignment: created by a coach for a team."""
 
@@ -96,9 +116,31 @@ class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=True)
+    due_date = db.Column(db.DateTime, nullable=True)
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    statuses = db.relationship(
+        "AssignmentStatus",
+        backref="assignment",
+        lazy="dynamic",
+        foreign_keys="AssignmentStatus.assignment_id",
+    )
+
+
+class AssignmentStatus(db.Model):
+    """Tracks completion of an assignment by an athlete."""
+
+    __tablename__ = "assignment_statuses"
+
+    id = db.Column(db.Integer, primary_key=True)
+    assignment_id = db.Column(db.Integer, db.ForeignKey("assignments.id"), nullable=False)
+    athlete_id = db.Column(db.Integer, db.ForeignKey("athletes.id"), nullable=False)
+    completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    athlete = db.relationship("Athlete", backref=db.backref("assignment_statuses", lazy="dynamic"))
 
 
 class Athlete(UserMixin, db.Model):

@@ -523,6 +523,181 @@ body {
     margin: 0.25rem 0 0;
 }
 
+/* ── Team dashboard two-column layout ── */
+.team-dash-layout {
+    display: grid;
+    grid-template-columns: 60% 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.team-dash-left {
+    min-width: 0;
+}
+
+.team-dash-right {
+    min-width: 0;
+}
+
+/* ── Calendar ── */
+.calendar-section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.25rem;
+    margin-bottom: 0;
+}
+
+.calendar-grid {
+    margin-top: 0.75rem;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    background: #f8fafc;
+}
+
+.calendar-day-empty {
+    background: transparent;
+}
+
+.calendar-day-today {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+}
+
+.calendar-day-has-due {
+    padding-bottom: 6px;
+}
+
+.calendar-dot {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--primary);
+}
+
+.calendar-day-today .calendar-dot {
+    background: #fff;
+}
+
+/* ── Announcements ── */
+.announce-form {
+    margin-bottom: 1rem;
+}
+
+.announcement-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.announcement-card {
+    background: var(--surface);
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+}
+
+.announcement-content {
+    font-size: 0.9375rem;
+    margin: 0 0 0.25rem;
+    white-space: pre-wrap;
+}
+
+.announcement-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* ── Assignment progress (coach) ── */
+.assignment-progress {
+    margin-top: 0.5rem;
+}
+
+.progress-bar {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.25rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 3px;
+    transition: width 0.2s ease;
+}
+
+.progress-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* ── Assignment completed (athlete) ── */
+.assignment-card-completed {
+    border-left: 3px solid var(--success-text);
+    background: var(--success-bg);
+}
+
+.assignment-status-done {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--success-text);
+    margin: 0.5rem 0 0;
+}
+
+.assignment-status-done .checkmark {
+    margin-right: 0.25rem;
+}
+
+.btn-small {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.assignment-due {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin: 0.25rem 0 0;
+}
+
+/* ── Team settings (bottom) ── */
+.team-settings-section {
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
 /* ── Home hero ── */
 .hero-block {
     text-align: center;
@@ -559,6 +734,10 @@ body {
     }
 
     .team-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .team-dash-layout {
         grid-template-columns: 1fr;
     }
 }

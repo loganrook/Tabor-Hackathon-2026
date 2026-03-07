@@ -13,7 +13,16 @@ from config import Config
 from extensions import db, login_manager
 
 # Import models after extensions so db is available; registers models with Flask-SQLAlchemy
-from models import Coach, Athlete, Team, Assignment  # noqa: E402, F401
+import calendar as cal_module
+from datetime import datetime, date
+from models import (  # noqa: E402, F401
+    Coach,
+    Athlete,
+    Team,
+    Assignment,
+    Announcement,
+    AssignmentStatus,
+)
 
 
 def create_app(config_class=Config):
@@ -137,7 +146,7 @@ def create_app(config_class=Config):
     @app.route("/team/<int:team_id>")
     @login_required
     def team_dashboard(team_id):
-        """Team dashboard: team name, roster, assignments. Coach sees edit links; athlete read-only."""
+        """Team dashboard: announcements, assignments, completion stats (coach) or statuses (athlete)."""
         team = Team.query.get_or_404(team_id)
         if not _user_can_access_team(team):
             flash("You do not have access to this team.", "error")
@@ -145,19 +154,88 @@ def create_app(config_class=Config):
                 return redirect(url_for("coach_dashboard"))
             return redirect(url_for("athlete_dashboard"))
         athletes = team.athletes.all()
+        announcements = (
+            team.announcements.order_by(Announcement.created_at.desc()).limit(50).all()
+        )
         assignments = (
             Assignment.query.filter_by(team_id=team_id)
             .order_by(Assignment.created_at.desc())
             .all()
         )
         is_coach = isinstance(current_user, Coach) and team.coach_id == current_user.id
+
+        # Coach: completion counts per assignment (completed, total)
+        # Athlete: their AssignmentStatus per assignment
+        assignment_completion = {}
+        assignment_status_by_athlete = {}
+        for a in assignments:
+            if is_coach:
+                total = a.statuses.count()
+                completed = a.statuses.filter_by(completed=True).count()
+                assignment_completion[a.id] = (completed, total)
+            else:
+                status = (
+                    AssignmentStatus.query.filter_by(
+                        assignment_id=a.id, athlete_id=current_user.id
+                    ).first()
+                )
+                assignment_status_by_athlete[a.id] = status
+
+        # Calendar: current month, days with due dates
+        today = date.today()
+        cal_year = today.year
+        cal_month = today.month
+        first_day = date(cal_year, cal_month, 1)
+        days_in_month = cal_module.monthrange(cal_year, cal_month)[1]
+        first_weekday = first_day.weekday()
+        assignment_due_days = set()
+        for a in assignments:
+            if (
+                a.due_date
+                and a.due_date.year == cal_year
+                and a.due_date.month == cal_month
+            ):
+                assignment_due_days.add(a.due_date.day)
+
         return render_template(
             "team_dashboard.html",
             team=team,
             athletes=athletes,
+            announcements=announcements,
             assignments=assignments,
             is_coach=is_coach,
+            assignment_completion=assignment_completion,
+            assignment_status_by_athlete=assignment_status_by_athlete,
+            cal_year=cal_year,
+            cal_month=cal_month,
+            days_in_month=days_in_month,
+            first_weekday=first_weekday,
+            cal_today=today.day,
+            assignment_due_days=assignment_due_days,
+        cal_month_name=cal_module.month_name[cal_month],
+    )
+
+    @app.route("/team/<int:team_id>/announce", methods=["POST"])
+    @login_required
+    def team_announce(team_id):
+        """Coach only: create an announcement for the team. Redirect to team dashboard."""
+        team = Team.query.get_or_404(team_id)
+        if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
+            flash("You cannot post announcements for this team.", "error")
+            return redirect(url_for("coach_dashboard"))
+        content = request.form.get("content", "").strip()
+        if not content:
+            flash("Announcement cannot be empty.", "error")
+            return redirect(url_for("team_dashboard", team_id=team_id))
+        ann = Announcement(
+            content=content,
+            team_id=team_id,
+            created_by=current_user.id,
         )
+        db.session.add(ann)
+        db.session.commit()
+        flash("Announcement posted.", "success")
+        return redirect(url_for("team_dashboard", team_id=team_id))
 
     @app.route("/coach/dashboard")
     @login_required
@@ -270,7 +348,7 @@ def create_app(config_class=Config):
     @app.route("/team/<int:team_id>/assignment/create", methods=["GET", "POST"])
     @login_required
     def create_team_assignment(team_id):
-        """Coach-only: create an assignment for this team. Redirects to team dashboard."""
+        """Coach-only: create an assignment for this team; create AssignmentStatus for each athlete."""
         team = Team.query.get_or_404(team_id)
         if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
             flash("You cannot create assignments for this team.", "error")
@@ -278,20 +356,69 @@ def create_app(config_class=Config):
         if request.method == "POST":
             title = request.form.get("title", "").strip()
             description = request.form.get("description", "").strip() or None
+            due_date = None
+            due_str = request.form.get("due_date", "").strip()
+            if due_str:
+                try:
+                    due_date = datetime.strptime(due_str, "%Y-%m-%dT%H:%M")
+                except ValueError:
+                    try:
+                        due_date = datetime.strptime(due_str, "%Y-%m-%d")
+                    except ValueError:
+                        pass
             if not title:
                 flash("Title is required.", "error")
                 return render_template("create_assignment.html", team=team)
             assignment = Assignment(
                 title=title,
                 description=description,
+                due_date=due_date,
                 team_id=team_id,
                 created_by=current_user.id,
             )
             db.session.add(assignment)
+            db.session.flush()
+            for athlete in team.athletes.all():
+                status = AssignmentStatus(
+                    assignment_id=assignment.id,
+                    athlete_id=athlete.id,
+                    completed=False,
+                )
+                db.session.add(status)
             db.session.commit()
             flash("Assignment created.", "success")
             return redirect(url_for("team_dashboard", team_id=team_id))
         return render_template("create_assignment.html", team=team)
+
+    @app.route("/assignment/<int:assignment_id>/complete", methods=["POST"])
+    @login_required
+    def assignment_complete(assignment_id):
+        """Athlete only: mark their AssignmentStatus as completed. Create status if missing (joined later)."""
+        if not isinstance(current_user, Athlete):
+            flash("Only athletes can complete assignments.", "error")
+            return redirect(url_for("coach_dashboard"))
+        assignment = Assignment.query.get_or_404(assignment_id)
+        if not _user_can_access_team(assignment.team):
+            flash("You do not have access to this team.", "error")
+            return redirect(url_for("athlete_dashboard"))
+        status = AssignmentStatus.query.filter_by(
+            assignment_id=assignment_id,
+            athlete_id=current_user.id,
+        ).first()
+        if not status:
+            status = AssignmentStatus(
+                assignment_id=assignment_id,
+                athlete_id=current_user.id,
+                completed=True,
+                completed_at=datetime.utcnow(),
+            )
+            db.session.add(status)
+        else:
+            status.completed = True
+            status.completed_at = datetime.utcnow()
+        db.session.commit()
+        flash("Assignment marked complete.", "success")
+        return redirect(url_for("team_dashboard", team_id=assignment.team_id))
 
     @app.route("/assignments")
     @login_required

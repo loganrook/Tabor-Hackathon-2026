@@ -1,4 +1,4 @@
-{# team_dashboard.html — Team name, back link, roster list, assignment cards. Coach sees Add Assignment. #}
+{# team_dashboard.html — Two-column: calendar (left), announcements + assignments (right). Team Settings at bottom. #}
 {% extends "base.html" %}
 {% block title %}{{ team.name }} — CoachHub{% endblock %}
 {% block content %}
@@ -7,41 +7,104 @@
     <a href="{{ url_for('coach_dashboard') if is_coach else url_for('athlete_dashboard') }}" class="back-link">← Back to my teams</a>
 </div>
 
-{% if is_coach %}
-<p class="team-meta invite-line">Invite code: <span class="invite-code">{{ team.invite_code }}</span> — share with athletes to join.</p>
-{% endif %}
-
-<section class="section">
-    <h2 class="section-heading">Roster</h2>
-    {% if athletes %}
-    <ul class="roster-list">
-        {% for a in athletes %}
-        <li>{{ a.name }}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p class="empty-state empty-state-inline">No athletes on this team yet.</p>
-    {% endif %}
-</section>
-
-<section class="section">
-    <h2 class="section-heading">Assignments</h2>
-    {% if is_coach %}
-    <p class="section-action">
-        <a href="{{ url_for('create_team_assignment', team_id=team.id) }}" class="btn-primary btn-primary-inline">Add Assignment</a>
-    </p>
-    {% endif %}
-    {% if assignments %}
-    <div class="assignment-list">
-        {% for a in assignments %}
-        <div class="assignment-card">
-            <p class="assignment-title">{{ a.title }}</p>
-            {% if a.description %}<p class="assignment-desc">{{ a.description }}</p>{% endif %}
-        </div>
-        {% endfor %}
+<div class="team-dash-layout">
+    <div class="team-dash-left">
+        <section class="calendar-section">
+            <h2 class="section-heading">{{ cal_month_name }} {{ cal_year }}</h2>
+            <div class="calendar-grid">
+                <div class="calendar-weekdays">
+                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                </div>
+                <div class="calendar-days">
+                    {% for i in range(first_weekday) %}
+                    <div class="calendar-day calendar-day-empty"></div>
+                    {% endfor %}
+                    {% for day in range(1, days_in_month + 1) %}
+                    <div class="calendar-day {{ 'calendar-day-today' if day == cal_today else '' }} {{ 'calendar-day-has-due' if day in assignment_due_days else '' }}">
+                        <span class="calendar-day-num">{{ day }}</span>
+                        {% if day in assignment_due_days %}
+                        <span class="calendar-dot"></span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
     </div>
-    {% else %}
-    <p class="empty-state empty-state-inline">No assignments yet.</p>
-    {% endif %}
+
+    <div class="team-dash-right">
+        <section class="section announcements-section">
+            <h2 class="section-heading">Announcements</h2>
+            {% if is_coach %}
+            <form action="{{ url_for('team_announce', team_id=team.id) }}" method="post" class="announce-form">
+                <div class="form-group">
+                    <label for="announce_content">Post an announcement</label>
+                    <textarea id="announce_content" name="content" rows="2" placeholder="Write something..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary btn-primary-inline">Post</button>
+            </form>
+            {% endif %}
+            {% if announcements %}
+            <div class="announcement-list">
+                {% for ann in announcements %}
+                <div class="announcement-card">
+                    <p class="announcement-content">{{ ann.content }}</p>
+                    <p class="announcement-meta">{{ ann.created_at.strftime('%b %d, %Y at %H:%M') if ann.created_at else '' }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state empty-state-inline">No announcements yet.</p>
+            {% endif %}
+        </section>
+
+        <section class="section assignments-section">
+            <h2 class="section-heading">{% if is_coach %}Assignments{% else %}My Assignments{% endif %}</h2>
+            {% if is_coach %}
+            <p class="section-action">
+                <a href="{{ url_for('create_team_assignment', team_id=team.id) }}" class="btn-primary btn-primary-inline">Add Assignment</a>
+            </p>
+            {% endif %}
+            {% if assignments %}
+            <div class="assignment-list">
+                {% for a in assignments %}
+                <div class="assignment-card {{ 'assignment-card-completed' if not is_coach and assignment_status_by_athlete.get(a.id) and assignment_status_by_athlete[a.id].completed else '' }}">
+                    <p class="assignment-title">{{ a.title }}</p>
+                    {% if a.description %}<p class="assignment-desc">{{ a.description }}</p>{% endif %}
+                    {% if a.due_date %}<p class="assignment-due">Due {{ a.due_date.strftime('%b %d, %Y at %H:%M') }}</p>{% endif %}
+                    {% if is_coach %}
+                    {% set completion = assignment_completion.get(a.id, (0, 0)) %}
+                    <div class="assignment-progress">
+                        <div class="progress-bar"><div class="progress-fill" style="width: {{ (completion[1] and (completion[0] / completion[1] * 100)) or 0 }}%;"></div></div>
+                        <span class="progress-text">{{ completion[0] }}/{{ completion[1] }} completed</span>
+                    </div>
+                    {% else %}
+                    {% set status = assignment_status_by_athlete.get(a.id) %}
+                    {% if status and status.completed %}
+                    <p class="assignment-status-done"><span class="checkmark">✓</span> Complete</p>
+                    {% else %}
+                    <form action="{{ url_for('assignment_complete', assignment_id=a.id) }}" method="post" style="display: inline;">
+                        <button type="submit" class="btn-primary btn-primary-inline btn-small">Mark Complete</button>
+                    </form>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state empty-state-inline">No assignments yet.</p>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+<section class="section team-settings-section">
+    <h2 class="section-heading">Team Settings</h2>
+    <p class="team-meta">Invite code: <span class="invite-code">{{ team.invite_code }}</span> — share with athletes to join.</p>
+    <p style="margin-top: 0.5rem;">
+        <a href="{{ url_for('team_roster', team_id=team.id) }}" class="back-link">View roster</a>
+        {% if athletes %}({{ athletes|length }} athlete{{ 's' if athletes|length != 1 else '' }}){% endif %}
+    </p>
 </section>
+
 {% endblock %}
