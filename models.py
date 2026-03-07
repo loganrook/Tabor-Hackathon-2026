@@ -8,6 +8,7 @@ Responsibilities: Define columns and relationships; keep DB logic here, not in r
 
 from datetime import datetime
 from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from extensions import db
 
@@ -26,9 +27,17 @@ class Coach(UserMixin, db.Model):
     # Relationship: one coach has many teams
     teams = db.relationship("Team", backref="coach", lazy="dynamic", foreign_keys="Team.coach_id")
 
-    # TODO: set_password(password: str) -> None
-    # TODO: check_password(password: str) -> bool
-    # Flask-Login: get_id, is_authenticated, is_active provided by UserMixin
+    def set_password(self, password: str) -> None:
+        """Hash the password and store it in self.password_hash."""
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        """Return True if the given password matches the hash."""
+        return check_password_hash(self.password_hash, password)
+
+    def get_id(self) -> str:
+        """Return a unique id for Flask-Login; prefix so user_loader can distinguish Coach from Athlete."""
+        return f"coach-{self.id}"
 
 
 class Team(db.Model):
@@ -47,16 +56,28 @@ class Team(db.Model):
     # TODO: roster list / get_roster() -> list[Athlete]
 
 
-class Athlete(db.Model):
+class Athlete(UserMixin, db.Model):
     """Athlete: belongs to a team (and thus to that team's coach)."""
 
     __tablename__ = "athletes"
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # TODO: If athletes log in: add UserMixin, password_hash, and Flask-Login loader for Athlete
+    def set_password(self, password: str) -> None:
+        """Hash the password and store it in self.password_hash."""
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        """Return True if the given password matches the hash."""
+        return check_password_hash(self.password_hash, password)
+
+    def get_id(self) -> str:
+        """Return a unique id for Flask-Login; prefix so user_loader can distinguish Athlete from Coach."""
+        return f"athlete-{self.id}"
+
     # TODO: Helper methods as needed (e.g. get_assignments, display_name)

@@ -7,6 +7,7 @@ Responsibilities: App creation, minimal request handling; keep business logic in
 """
 
 from flask import Flask, render_template, redirect, url_for, flash, request
+from flask_login import login_user, logout_user, login_required, current_user
 from config import Config
 from extensions import db, login_manager
 
@@ -26,8 +27,19 @@ def create_app(config_class=Config):
 
     @login_manager.user_loader
     def load_user(user_id: str):
-        # TODO: Load Coach by id; if athletes log in later, distinguish by type or separate loader
-        return Coach.query.get(int(user_id)) if user_id else None
+        """Load Coach or Athlete by id; user_id is 'coach-{id}' or 'athlete-{id}'."""
+        if not user_id or "-" not in user_id:
+            return None
+        prefix, _, id_str = user_id.partition("-")
+        try:
+            pk = int(id_str)
+        except ValueError:
+            return None
+        if prefix == "coach":
+            return Coach.query.get(pk)
+        if prefix == "athlete":
+            return Athlete.query.get(pk)
+        return None
 
     # ---------- Routes ----------
 
@@ -40,40 +52,56 @@ def create_app(config_class=Config):
     @app.route("/login", methods=["GET", "POST"])
     def login():
         """Show login form (GET) or authenticate and redirect (POST)."""
-        # TODO: implement — validate credentials, call login_user(current_user), redirect to coach/athlete dashboard
         if request.method == "POST":
-            flash("Login not implemented yet.", "info")
-            return redirect(url_for("login"))
+            email = request.form.get("email", "").strip()
+            password = request.form.get("password", "")
+            if not email or not password:
+                flash("Email and password are required.", "error")
+                return render_template("login.html")
+            coach = Coach.query.filter_by(email=email).first()
+            if coach and coach.check_password(password):
+                login_user(coach)
+                return redirect(url_for("coach_dashboard"))
+            athlete = Athlete.query.filter_by(email=email).first()
+            if athlete and athlete.check_password(password):
+                login_user(athlete)
+                return redirect(url_for("athlete_dashboard"))
+            flash("Invalid email or password.", "error")
+            return render_template("login.html")
         return render_template("login.html")
 
     @app.route("/logout")
     def logout():
         """Clear session and redirect to homepage or login."""
-        # TODO: implement — logout_user(), then redirect
+        logout_user()
         return redirect(url_for("index"))
 
     @app.route("/coach/dashboard")
+    @login_required
     def coach_dashboard():
         """Coach-only: roster overview and quick actions (e.g. add athlete)."""
-        # TODO: implement — @login_required, ensure current_user is Coach, load roster summary
+        # TODO: implement — ensure current_user is Coach, load roster summary
         return render_template("coach_dashboard.html")
 
     @app.route("/athlete/dashboard")
+    @login_required
     def athlete_dashboard():
         """Athlete-only: view assignments and personal info."""
-        # TODO: implement — @login_required if athletes log in, ensure current_user is Athlete
+        # TODO: implement — ensure current_user is Athlete
         return render_template("athlete_dashboard.html")
 
     @app.route("/roster")
+    @login_required
     def roster():
         """List athletes for the current coach/context."""
-        # TODO: implement — @login_required, filter by current_user (coach), pass athletes to template
+        # TODO: implement — filter by current_user (coach), pass athletes to template
         return render_template("roster.html")
 
     @app.route("/roster/add", methods=["GET", "POST"])
+    @login_required
     def add_athlete():
         """Show form to add athlete (GET) or create athlete and persist (POST)."""
-        # TODO: implement — @login_required, validate form, create Athlete, redirect to roster or coach_dashboard
+        # TODO: implement — validate form, create Athlete, redirect to roster or coach_dashboard
         if request.method == "POST":
             flash("Add athlete not implemented yet.", "info")
             return redirect(url_for("roster"))
