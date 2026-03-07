@@ -6,8 +6,8 @@
     <h1>Connect with your coach and team.</h1>
     <p class="hero-sub">Create teams, assign work, and track progress in one place.</p>
     <div class="hero-buttons">
-        <a href="{{ url_for('register', role='coach') }}" class="btn-hero"><i class="bi bi-person-badge"></i> I'm a Coach</a>
-        <a href="{{ url_for('register', role='athlete') }}" class="btn-hero"><i class="bi bi-person"></i> I'm an Athlete</a>
+        <a href="{{ url_for('login') }}" class="btn-hero"><i class="bi bi-box-arrow-in-right"></i> Log in</a>
+        <a href="{{ url_for('choose_role') }}" class="btn-hero"><i class="bi bi-person-plus"></i> Sign up</a>
     </div>
 </div>
 {% endblock %}
