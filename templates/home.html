@@ -13,8 +13,8 @@
                 <h1 class="landing-title">RepRoom</h1>
                 <p class="landing-tagline">Workouts. Schedules. Communication. All in one place.</p>
                 <div class="landing-actions">
-                    <a href="{{ url_for('login') }}" class="btn-landing btn-landing-secondary" id="landing-btn-login" data-landing-panel="login">Log In</a>
-                    <a href="{{ url_for('register') }}" class="btn-landing btn-landing-primary" id="landing-btn-signup" data-landing-panel="register">Sign Up</a>
+                    <a href="{{ url_for('login') }}" class="btn-landing btn-landing-secondary" id="landing-btn-login" data-landing-panel="login" data-landing-prevent>Log In</a>
+                    <a href="{{ url_for('register') }}" class="btn-landing btn-landing-primary" id="landing-btn-signup" data-landing-panel="register" data-landing-prevent>Sign Up</a>
                 </div>
             </div>
 
@@ -34,7 +34,7 @@
                         </div>
                         <button type="submit" class="btn-primary">Log in</button>
                     </form>
-                    <p class="auth-footer">Don't have an account? <a href="#" data-landing-panel="register">Sign up</a></p>
+                    <p class="auth-footer">Don't have an account? <a href="#" class="landing-switch-link" data-landing-panel="register" data-landing-prevent>Sign up</a></p>
                 </div>
             </div>
 
@@ -73,7 +73,7 @@
                         </div>
                         <button type="submit" class="btn-primary">Create account</button>
                     </form>
-                    <p class="auth-footer">Already have an account? <a href="#" data-landing-panel="login">Log in</a></p>
+                    <p class="auth-footer">Already have an account? <a href="#" class="landing-switch-link" data-landing-panel="login" data-landing-prevent>Log in</a></p>
                 </div>
             </div>
         </div>
@@ -116,7 +116,9 @@ document.body.classList.add('home-landing');
         var panel = target.getAttribute('data-landing-panel');
         if (panel === 'login' || panel === 'register') {
             e.preventDefault();
+            e.stopPropagation();
             showPanel(panel);
+            return false;
         }
     }
 
@@ -126,10 +128,36 @@ document.body.classList.add('home-landing');
         showPanel(null);
     }
 
-    root.addEventListener('click', function(e) {
-        handlePanelClick(e);
-        handleBackClick(e);
-    });
+    if (root) {
+        root.addEventListener('click', function(e) {
+            handlePanelClick(e);
+            handleBackClick(e);
+        }, true);
+    }
+
+    // Password requirements: live checkmarks for landing register form
+    var pwdEl = document.getElementById('landing-register-password');
+    var reqIds = ['landing-req-length', 'landing-req-upper', 'landing-req-lower', 'landing-req-number'];
+    function checkLandingPassword() {
+        var pwd = (pwdEl && pwdEl.value) || '';
+        var len = pwd.length >= 8;
+        var upper = /[A-Z]/.test(pwd);
+        var lower = /[a-z]/.test(pwd);
+        var num = /[0-9]/.test(pwd);
+        var results = [len, upper, lower, num];
+        reqIds.forEach(function(id, i) {
+            var el = document.getElementById(id);
+            if (el) {
+                if (results[i]) el.classList.add('req-met');
+                else el.classList.remove('req-met');
+            }
+        });
+    }
+    if (pwdEl) {
+        pwdEl.addEventListener('input', checkLandingPassword);
+        pwdEl.addEventListener('change', checkLandingPassword);
+        checkLandingPassword();
+    }
 })();
 </script>
 {% endblock %}
