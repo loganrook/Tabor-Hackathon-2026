@@ -2,61 +2,77 @@
 {% extends "base.html" %}
 {% block title %}Messages — Inbox{% endblock %}
 {% block content %}
-<div class="app-container">
-    <main class="content">
-        <div class="page-header">
-            <h1>Messages</h1>
-            <p class="text-muted">Private conversations with your athletes across all teams.</p>
-        </div>
+<div class="team-dash-wrapper">
+    {% include '_team_sidebar.html' %}
 
-        <form method="get" class="inbox-filters">
-            <div class="form-group-inline">
-                <label for="status">Status</label>
-                <select id="status" name="status">
-                    <option value="">All</option>
-                    <option value="unread" {% if request.args.get('status') == 'unread' %}selected{% endif %}>Unread</option>
-                </select>
-            </div>
-            <div class="form-group-inline">
-                <label for="date">Date</label>
-                <input type="date" id="date" name="date" value="{{ request.args.get('date', '') }}">
-            </div>
-            <button type="submit" class="btn-secondary btn-small">Filter</button>
-        </form>
+    <main class="team-dash-main">
+        {% include '_team_topbar.html' %}
 
-        {% if threads %}
-        <div class="inbox-list">
-            {% for t in threads %}
-            <a href="{{ url_for('coach_thread', team_id=t.team.id, athlete_id=t.athlete.id) }}" class="inbox-thread">
-                <div class="inbox-thread-main">
-                    <div class="inbox-thread-name">
-                        {{ t.athlete.name }}
-                        {% if t.group_names %}
-                        <span class="inbox-thread-groups">— {{ t.group_names|join(', ') }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="inbox-thread-team">{{ t.team.name }}</div>
-                    <div class="inbox-thread-snippet">
-                        {{ (t.last_message.body[:80] ~ ('…' if t.last_message.body|length > 80 else '')) }}
-                    </div>
+        <div class="team-dash-content">
+            <div class="team-page-content inbox-page">
+                <div class="team-page-heading-row">
+                    <h2 class="team-page-heading">Messages</h2>
                 </div>
-                <div class="inbox-thread-meta">
-                    <span class="inbox-thread-time">
-                        {{ t.last_message.created_at|fmt_datetime if t.last_message.created_at }}
-                    </span>
-                    {% if t.unread_count > 0 %}
-                    <span class="inbox-thread-unread">{{ t.unread_count }} new</span>
-                    {% endif %}
-                    {% if t.resolved %}
-                    <span class="inbox-thread-resolved">Resolved</span>
-                    {% endif %}
+                <p class="text-muted">
+                    Private conversations with your athletes across all teams.
+                </p>
+
+                <form method="get" class="inbox-filters">
+                    <div class="form-group-inline">
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="">All</option>
+                            <option value="unread" {% if request.args.get('status') == 'unread' %}selected{% endif %}>
+                                Unread
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group-inline">
+                        <label for="date">Date</label>
+                        <input type="date" id="date" name="date" value="{{ request.args.get('date', '') }}">
+                    </div>
+                    <button type="submit" class="btn-primary btn-primary-inline btn-small">Filter</button>
+                </form>
+
+                {% if threads %}
+                <div class="inbox-list">
+                    {% for t in threads %}
+                    <a href="{{ url_for('coach_thread', team_id=t.team.id, athlete_id=t.athlete.id) }}" class="inbox-thread">
+                        <div class="inbox-thread-main">
+                            <div class="inbox-thread-name">
+                                {{ t.athlete.name }}
+                                {% if t.group_names %}
+                                <span class="inbox-thread-groups">— {{ t.group_names|join(', ') }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="inbox-thread-team">{{ t.team.name }}</div>
+                            <div class="inbox-thread-snippet">
+                                {{ (t.last_message.body[:80] ~ ('…' if t.last_message.body|length > 80 else '')) }}
+                            </div>
+                        </div>
+                        <div class="inbox-thread-meta">
+                            <span class="inbox-thread-time">
+                                {{ t.last_message.created_at|fmt_datetime if t.last_message.created_at }}
+                            </span>
+                            {% if t.unread_count > 0 %}
+                            <span class="inbox-thread-unread">{{ t.unread_count }} new</span>
+                            {% endif %}
+                            {% if t.resolved %}
+                            <span class="inbox-thread-resolved">Resolved</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
                 </div>
-            </a>
-            {% endfor %}
+                {% else %}
+                <div class="empty-state inbox-empty">
+                    <div class="empty-state-icon"><i class="bi bi-chat-dots"></i></div>
+                    <p class="inbox-empty-title">No direct messages yet.</p>
+                    <p class="inbox-empty-subtitle">Athletes can message you from their team pages.</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
-        {% else %}
-        <p class="empty-state">No direct messages yet. Athletes can message you from their team pages.</p>
-        {% endif %}
     </main>
 </div>
 {% endblock %}

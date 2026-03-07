@@ -845,7 +845,14 @@ def create_app(config_class=Config):
         thread_list.sort(
             key=lambda t: t["last_message"].created_at or datetime.min, reverse=True
         )
-        return render_template("coach_inbox.html", threads=thread_list)
+        # Pass first team so sidebar shows Team Hub, Workouts, Roster, Groups, Settings
+        team = current_user.teams.first()
+        return render_template(
+            "coach_inbox.html",
+            threads=thread_list,
+            team=team,
+            is_coach=True,
+        )
 
     @app.route(
         "/team/<int:team_id>/messages/<int:athlete_id>", methods=["GET", "POST"]

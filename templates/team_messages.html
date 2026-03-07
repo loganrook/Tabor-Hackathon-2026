@@ -10,16 +10,15 @@
 
         <div class="team-dash-content">
             <div class="team-page-content dm-page">
-                <p class="auth-footer dm-back">
-                    <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="back-link">← Back to team</a>
-                </p>
-                <h2 class="team-page-heading dm-heading">
-                    {% if is_coach %}
-                        Messages with {{ athlete.name }}
-                    {% else %}
-                        Messages with {{ coach.name }}
-                    {% endif %}
-                </h2>
+                <div class="team-page-heading-row dm-heading-row">
+                    <h2 class="team-page-heading dm-heading">
+                        {% if is_coach %}
+                            Messages with {{ athlete.name }}
+                        {% else %}
+                            Messages with {{ coach.name }}
+                        {% endif %}
+                    </h2>
+                </div>
                 {% if is_coach and athlete_groups %}
                 <p class="text-muted dm-subheading">Group: {{ athlete_groups|join(', ') }}</p>
                 {% endif %}
