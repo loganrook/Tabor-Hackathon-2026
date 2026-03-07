@@ -47,3 +47,10 @@ General rules:
 - All forms must validate input before touching the database
 - Use flash messages for user feedback (success, errors)
 - Keep database queries in models.py, not in routes
+
+## Testing
+- Critical features must have tests (login, database operations)
+- Tests go in a tests/ folder at the project root
+- Test files mirror the source file they test (test_models.py, test_app.py)
+- Use descriptive test names (test_coach_can_add_athlete)
+- Don't push code that breaks existing tests
