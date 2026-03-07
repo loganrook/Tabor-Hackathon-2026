@@ -189,7 +189,7 @@ def create_app(config_class=Config):
         """Serve the homepage for guests; redirect logged-in users to dashboard."""
         if current_user.is_authenticated:
             return redirect(url_for("dashboard"))
-        return render_template("home.html")
+        return render_template("home.html", role_param=request.args.get("role"))
 
     @app.route("/login", methods=["GET", "POST"])
     def login():

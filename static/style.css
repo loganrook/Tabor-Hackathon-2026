@@ -3260,6 +3260,99 @@ body.home-landing .app-container {
 .landing-hero-inner {
     text-align: center;
     max-width: 640px;
+    position: relative;
+}
+
+/* Hero title + buttons: visible by default; fade out when auth panel is shown (smooth transition, background keeps scrolling) */
+.landing-hero-content {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Auth panels (login/register): in-place so mosaic never stops */
+.landing-auth-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+
+.landing-auth-panel .landing-auth-card {
+    transform: translateY(14px);
+    transition: transform 0.35s ease;
+}
+
+.landing-root.landing-show-login .landing-hero-content,
+.landing-root.landing-show-register .landing-hero-content {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.landing-root.landing-show-login .landing-auth-panel-login,
+.landing-root.landing-show-register .landing-auth-panel-register {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.landing-root.landing-show-login .landing-auth-panel-login .landing-auth-card,
+.landing-root.landing-show-register .landing-auth-panel-register .landing-auth-card {
+    transform: translateY(0);
+}
+
+body.home-landing .landing-auth-card {
+    border-radius: var(--radius-saas);
+    box-shadow: var(--shadow-saas);
+}
+
+.landing-back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.landing-back-link:hover {
+    color: var(--primary);
+}
+
+/* Hero CTA as button: no default button look, same as link style */
+button.btn-landing {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+button.btn-landing-secondary {
+    background: rgba(249, 250, 251, 0.08);
+    border: 1px solid rgba(249, 250, 251, 0.85);
+    color: #f9fafb;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+button.btn-landing-secondary:hover {
+    background: #f9fafb;
+    color: #020617;
+    border-color: #f9fafb;
+}
+
+button.btn-landing-primary {
+    background: #f9fafb;
+    color: #020617;
+    border: 1px solid #f9fafb;
+}
+
+button.btn-landing-primary:hover {
+    background: #fff;
+    border-color: #fff;
+    opacity: 0.94;
 }
 
 @keyframes landing-hero-fade {
