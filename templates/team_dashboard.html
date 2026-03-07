@@ -126,6 +126,9 @@
                     {% set status = assignment_status_by_athlete.get(a.id) %}
                     {% if status and status.completed %}
                     <p class="assignment-status-done"><span class="checkmark">✓</span> Complete</p>
+                    <form action="{{ url_for('assignment_uncomplete', assignment_id=a.id) }}" method="post" style="display: inline;">
+                        <button type="submit" class="btn-danger-outline btn-small">Undo</button>
+                    </form>
                     {% else %}
                     <form action="{{ url_for('assignment_complete', assignment_id=a.id) }}" method="post" style="display: inline;">
                         <button type="submit" class="btn-primary btn-primary-inline btn-small">Mark Complete</button>
@@ -144,7 +147,9 @@
 
 <section class="section team-settings-section">
     <h2 class="section-heading">Team Settings</h2>
+    {% if is_coach %}
     <p class="team-meta">Invite code: <span class="invite-code">{{ team.invite_code }}</span> — share with athletes to join.</p>
+    {% endif %}
     <p style="margin-top: 0.5rem;">
         <a href="{{ url_for('team_roster', team_id=team.id) }}" class="back-link">View roster</a>
         {% if athletes %}({{ athletes|length }} athlete{{ 's' if athletes|length != 1 else '' }}){% endif %}

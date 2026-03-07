@@ -529,6 +529,30 @@ def create_app(config_class=Config):
         flash("Assignment marked complete.", "success")
         return redirect(url_for("team_dashboard", team_id=assignment.team_id))
 
+    @app.route("/assignment/<int:assignment_id>/uncomplete", methods=["POST"])
+    @login_required
+    def assignment_uncomplete(assignment_id):
+        """Athlete only: undo their own completion of an assignment."""
+        if not isinstance(current_user, Athlete):
+            flash("Only athletes can undo assignment completion.", "error")
+            return redirect(url_for("coach_dashboard"))
+        assignment = Assignment.query.get_or_404(assignment_id)
+        if not _user_can_access_team(assignment.team):
+            flash("You do not have access to this team.", "error")
+            return redirect(url_for("athlete_dashboard"))
+        status = AssignmentStatus.query.filter_by(
+            assignment_id=assignment_id,
+            athlete_id=current_user.id,
+        ).first()
+        if status and status.completed:
+            status.completed = False
+            status.completed_at = None
+            db.session.commit()
+            flash("Assignment completion undone.", "success")
+        else:
+            flash("Nothing to undo.", "info")
+        return redirect(url_for("team_dashboard", team_id=assignment.team_id))
+
     @app.route("/assignments")
     @login_required
     def list_assignments():
