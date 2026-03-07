@@ -2,11 +2,12 @@
 {% extends "base.html" %}
 {% block title %}CoachHub{% endblock %}
 {% block content %}
-<div class="hero-block">
+<div class="hero-block hero-saas">
     <h1>Connect with your coach and team.</h1>
+    <p class="hero-sub">Create teams, assign work, and track progress in one place.</p>
     <div class="hero-buttons">
-        <a href="{{ url_for('register', role='coach') }}" class="btn-hero">I'm a Coach</a>
-        <a href="{{ url_for('register', role='athlete') }}" class="btn-hero">I'm an Athlete</a>
+        <a href="{{ url_for('register', role='coach') }}" class="btn-hero"><i class="bi bi-person-badge"></i> I'm a Coach</a>
+        <a href="{{ url_for('register', role='athlete') }}" class="btn-hero"><i class="bi bi-person"></i> I'm an Athlete</a>
     </div>
 </div>
 {% endblock %}

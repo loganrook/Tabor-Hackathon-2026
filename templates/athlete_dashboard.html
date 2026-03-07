@@ -1,17 +1,92 @@
-{# athlete_dashboard.html — Join Team button + grid of team cards. #}
+{# athlete_dashboard.html — SaaS dashboard: welcome, schedule, progress, leaderboard + team grid. #}
 {% extends "base.html" %}
-{% block title %}My teams — CoachHub{% endblock %}
+{% block title %}Overview — CoachHub{% endblock %}
 {% block content %}
-<div class="page-header">
-    <h1>My teams</h1>
-    <a href="{{ url_for('join_team') }}" class="btn-primary btn-primary-inline">Join Team</a>
+<div class="dashboard-topbar">
+    <div class="dashboard-search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="search" class="dashboard-search" placeholder="Search teams, assignments…" aria-label="Search">
+    </div>
+    <a href="{{ url_for('join_team') }}" class="btn-saas"><i class="bi bi-plus-lg"></i> Add New</a>
+</div>
+
+<div class="welcome-banner card-saas">
+    <div class="welcome-banner-content">
+        <h2>Welcome back, {{ current_user.name.split()[0] if current_user.name and ' ' in current_user.name else current_user.name or 'Athlete' }}.</h2>
+        <p>Here’s what’s happening with your teams today.</p>
+        <a href="{{ url_for('join_team') }}" class="quick-action">Join a team <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="welcome-banner-illus"><i class="bi bi-trophy"></i></div>
+</div>
+
+<div class="dashboard-cards-row">
+    <div class="card-saas">
+        <h3 class="dashboard-card-title">Today’s Schedule</h3>
+        <div class="schedule-timeline">
+            {% if teams %}
+                {% for team in teams[:3] %}
+                <div class="schedule-item">
+                    <div class="schedule-item-icon"><i class="bi bi-people-fill"></i></div>
+                    <div class="schedule-item-content">
+                        <div class="schedule-item-title">{{ team.name }}</div>
+                        <div class="schedule-item-meta">Coach: {{ team.coach.name }}</div>
+                        <div class="schedule-item-avatars">
+                            <span title="{{ team.coach.name }}">{{ team.coach.name[0]|upper if team.coach.name else '?' }}</span>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="ongoing-link"><i class="bi bi-chevron-right"></i></a>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="progress-summary">No teams yet. Join one to get started.</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-saas">
+        <h3 class="dashboard-card-title">Progress</h3>
+        <div class="progress-ring-wrap">
+            <div class="progress-ring" style="--pct: {{ (teams|length * 25) if teams else 0 }}"><div class="progress-ring-inner">{{ (teams|length * 25) if teams else 0 }}%</div></div>
+            <p class="progress-summary">Activity in the last 20 days.<br>Teams: {{ teams|length }}.</p>
+        </div>
+    </div>
+</div>
+
+<h3 class="dashboard-section-title">Leaderboard</h3>
+<div class="table-saas-wrap">
+    <table class="table-saas">
+        <thead>
+            <tr>
+                <th class="rank">Rank</th>
+                <th>Name</th>
+                <th>Course / Team</th>
+                <th>Hours</th>
+                <th>Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if teams %}
+                {% for team in teams[:5] %}
+                <tr>
+                    <td class="rank">{{ loop.index }}</td>
+                    <td>{{ current_user.name }}</td>
+                    <td>{{ team.name }}</td>
+                    <td>—</td>
+                    <td>0</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No data yet. Join a team to get started.</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
 </div>
 
 {% if teams %}
+<div class="dashboard-section-title" style="margin-top: calc(var(--space-unit) * 5);">My teams</div>
 <div class="team-grid">
     {% for team in teams %}
     <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-card-link">
-        <div class="team-card">
+        <div class="team-card card-saas">
             <p class="team-name">{{ team.name }}</p>
             <p class="team-meta">Coach: {{ team.coach.name }}</p>
         </div>
@@ -19,9 +94,9 @@
     {% endfor %}
 </div>
 {% else %}
-<div class="empty-state section">
+<div class="empty-state section" style="margin-top: calc(var(--space-unit) * 4);">
     <p>You're not on any teams yet.</p>
-    <a href="{{ url_for('join_team') }}" class="btn-hero">Join Team</a>
+    <a href="{{ url_for('join_team') }}" class="btn-saas">Join Team</a>
 </div>
 {% endif %}
 {% endblock %}
