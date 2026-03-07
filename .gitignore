@@ -3,3 +3,5 @@ venv/
 .env
 *.pyc
 instance/
+
+# Keep landing page assets tracked (static/landing-photos/*.jpg) so the team gets them when they clone/pull.
