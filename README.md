@@ -65,9 +65,14 @@ Tests are stubs for now; implement them as you add features (e.g. login, DB oper
 - **Calendar**: The team dashboard calendar starts weeks on Sunday, stretches rows to fill the available height, and shows a tiny preview of the first workout title inside each day cell so coaches can quickly scan what’s coming. Dots under each day indicate workout due dates and announcements.
 - **Sidebar & roster**: The team sidebar focuses on simple section labels (Team Hub, Workouts, Roster, Groups, Team Settings), while the roster page itself shows a player count under the `Roster` heading (for example, `5 players`).
 - **Top bar**: When viewing a team, the top bar shows a breadcrumb-style context like `GamePlan › Football`, with the team name slightly larger and bolder for orientation.
-- **Right column**: The right column is split into Announcements and Workouts. Announcement timestamps use friendly “time ago” text like `Just now` or `2 hours ago`, the plus icons have hover tooltips, and empty states include subtle icons so they feel intentional rather than broken. Coaches see per-workout completion progress; athletes see their own exercise completion status.
+- **Right column**: The right column is split into Announcements and Workouts. Cards in this column use the same clean white card style as the rest of the app so workouts, announcements, and their progress states all feel consistent. Announcement timestamps use friendly “time ago” text like `Just now` or `2 hours ago`, the plus icons have hover tooltips, and empty states include subtle icons so they feel intentional rather than broken. Coaches see per-workout completion progress; athletes see their own exercise completion status.
 
 ## Workouts: sets and reps
 
 - **Simple case**: Each exercise row lets you enter a number of sets and a single reps value (for example, `3` sets and `10` reps).
 - **Different reps per set**: If a coach wants different reps on each set, they can type a comma-separated list into the Reps box (for example, `12,10` for 2 sets, or `12,10,8` for 3 sets). The app stores this plan with the workout, and the workout detail screen shows the breakdown as “Set 1: 12 reps · Set 2: 10 reps · Set 3: 8 reps”.
+
+## Workout detail UI
+
+- **Exercise cards**: On the workout detail page, each exercise is rendered as its own white card with a bold, dark exercise name, darker gray sets/reps text, and generous padding/spacing so both coaches and athletes can quickly scan the workout.
+- **Completion & progress**: Athlete checkboxes use high-contrast styling, and per-exercise completion/progress text is shown in dark, readable text inside each card so it remains legible even on dim displays.

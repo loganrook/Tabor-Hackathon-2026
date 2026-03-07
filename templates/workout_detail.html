@@ -13,7 +13,7 @@
                     <a href="{{ url_for('team_workouts', team_id=team.id) }}" class="back-link">← Back to workouts</a>
                 </div>
 
-                <h2 class="team-page-heading">{{ workout.title }}</h2>
+                <h2 class="team-page-heading workout-detail-title">{{ workout.title }}</h2>
 
                 {% if workout.description %}
                 <p class="text-muted" style="margin-top:-0.25rem; margin-bottom:0.75rem;">{{ workout.description }}</p>
@@ -42,7 +42,7 @@
                 </div>
                 {% endif %}
 
-                <div class="exercise-list" style="margin-top:1.5rem;">
+                <div class="exercise-list">
                     {% if exercises %}
                     {% for ex in exercises %}
                     {% if is_coach %}
@@ -102,7 +102,7 @@
                 </div>
 
                 {% if is_coach %}
-                <div style="margin-top:1.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <div style="margin-top:2.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
                     <a href="{{ url_for('workout_edit', team_id=team.id, workout_id=workout.id) }}" class="btn-secondary btn-small">
                         <i class="bi bi-pencil"></i> Edit workout
                     </a>

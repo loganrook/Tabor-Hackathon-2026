@@ -1,21 +1,23 @@
 .exercise-list {
-    margin-top: 1rem;
-    border-radius: var(--radius);
-    background: #1a1a2e;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.6);
-    overflow: hidden;
+    margin-top: 1.5rem;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .exercise-row {
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #111827;
-}
-
-.exercise-row:last-child {
-    border-bottom: none;
+    padding: 0.9rem 1.1rem;
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 .exercise-main {
@@ -24,19 +26,21 @@
 }
 
 .exercise-name {
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #333333;
     margin: 0;
 }
 
 .exercise-meta {
-    font-size: 0.875rem;
-    color: #9ca3af;
-    margin: 0.15rem 0 0.25rem;
+    font-size: 0.9rem;
+    color: #555555;
+    margin: 0.1rem 0 0.2rem;
 }
 
 .exercise-notes {
-    font-size: 0.8125rem;
-    color: #9ca3af;
+    font-size: 0.85rem;
+    color: #6b7280;
     margin: 0;
 }
 
@@ -887,40 +891,6 @@ body.auth-dark .password-requirements li:last-child::after {
     border-bottom: none;
 }
 
-/* Dark-style cards for roster & groups inside team pages */
-.team-page-content .roster-page-list {
-    background: #1a1a2e;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.6);
-    border: 1px solid #16163a;
-}
-
-.team-page-content .roster-page-item {
-    background: transparent;
-    color: #f9fafb;
-}
-
-.team-page-content .roster-page-email,
-.team-page-content .roster-page-groups {
-    color: #9ca3af;
-}
-
-.team-page-content .team-group-card {
-    background: #1a1a2e;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.6);
-    border: 1px solid #16163a;
-}
-
-.team-page-content .team-group-name {
-    color: #f9fafb;
-}
-
-.team-page-content .team-group-meta {
-    color: #9ca3af;
-}
-
-
 /* Optional minimal table (roster with email/team) ── */
 .roster-table {
     width: 100%;
@@ -1498,52 +1468,9 @@ body.auth-dark .password-requirements li:last-child::after {
     color: var(--text);
 }
 
-/* Dark right column theme for team dashboard */
+/* Dark right column chrome; cards stay light/white */
 .team-dash-right-col {
     box-shadow: -4px 0 20px rgba(15, 23, 42, 0.4);
-}
-
-.team-dash-right-col .team-right-box-title {
-    color: #f9fafb;
-}
-
-.team-dash-right-col .team-right-box-plus {
-    color: #f9fafb;
-}
-
-.team-dash-right-col .team-right-box-plus:hover {
-    background: rgba(55, 65, 81, 0.8);
-}
-
-.team-dash-right-col .team-right-box-inner {
-    scrollbar-color: rgba(55, 65, 81, 0.8) transparent;
-}
-
-.team-dash-right-col .team-right-box-inner::-webkit-scrollbar-thumb {
-    background: rgba(55, 65, 81, 0.9);
-}
-
-.team-dash-right-col .announcement-card,
-.team-dash-right-col .workout-card {
-    background: #1a1a2e;
-    border: 1px solid #16163a;
-    color: #f9fafb;
-}
-
-.team-dash-right-col .announcement-content,
-.team-dash-right-col .workout-title,
-.team-dash-right-col .workout-card .workout-title {
-    color: #f9fafb;
-}
-
-.team-dash-right-col .announcement-meta,
-.team-dash-right-col .workout-progress-text {
-    color: #9ca3af;
-}
-
-.team-dash-right-col .announcement-card-auto {
-    background: #374151;
-    font-style: italic;
 }
 
 .team-dash-right-col .team-right-box + .team-right-box {
@@ -1619,6 +1546,12 @@ body.auth-dark .password-requirements li:last-child::after {
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--text);
+}
+
+.workout-detail-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #111827;
 }
 
 .team-page-heading-row {
@@ -2303,6 +2236,16 @@ body.auth-dark .password-requirements li:last-child::after {
     font-size: 0.75rem;
     color: var(--text-muted);
     margin: 0.25rem 0 0;
+}
+
+.exercise-main .workout-progress-text {
+    font-size: 0.8rem;
+    color: #374151;
+}
+
+.exercise-main .workout-status-text {
+    font-size: 0.8rem;
+    color: #065f46;
 }
 
 .team-right-box .workout-badge-team {

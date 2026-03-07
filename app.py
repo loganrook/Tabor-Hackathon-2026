@@ -779,31 +779,33 @@ def create_app(config_class=Config):
         )
         return render_template("coach_inbox.html", threads=thread_list)
 
-    @app.route("/team/<int:team_id>/messages/<int:athlete_id>", methods=["GET", \"POST\"])
+    @app.route(
+        "/team/<int:team_id>/messages/<int:athlete_id>", methods=["GET", "POST"]
+    )
     @login_required
     def coach_thread(team_id, athlete_id):
-        \"\"\"Coach-only: conversation with a specific athlete for a team.\"\"\"
+        """Coach-only: conversation with a specific athlete for a team."""
         team = Team.query.get_or_404(team_id)
         if not _is_head_coach(team):
-            flash(\"You cannot view messages for this team.\", \"error\")
-            return redirect(url_for(\"dashboard\"))
+            flash("You cannot view messages for this team.", "error")
+            return redirect(url_for("dashboard"))
         athlete = Athlete.query.get_or_404(athlete_id)
         if not team.athletes.filter(Athlete.id == athlete.id).first():
-            flash(\"Athlete is not on this team.\", \"error\")
-            return redirect(url_for(\"dashboard\"))
-        if request.method == \"POST\":
-            body = request.form.get(\"body\", \"\").strip()
-            reason = request.form.get(\"reason\", \"\").strip() or None
+            flash("Athlete is not on this team.", "error")
+            return redirect(url_for("dashboard"))
+        if request.method == "POST":
+            body = request.form.get("body", "").strip()
+            reason = request.form.get("reason", "").strip() or None
             if not body:
-                flash(\"Message cannot be empty.\", \"error\")
+                flash("Message cannot be empty.", "error")
                 return redirect(
-                    url_for(\"coach_thread\", team_id=team_id, athlete_id=athlete_id)
+                    url_for("coach_thread", team_id=team_id, athlete_id=athlete_id)
                 )
             dm = DirectMessage(
                 team_id=team.id,
                 coach_id=current_user.id,
                 athlete_id=athlete.id,
-                sender_role=\"coach\",
+                sender_role="coach",
                 reason=reason,
                 body=body,
                 read_by_coach=True,
@@ -812,9 +814,9 @@ def create_app(config_class=Config):
             )
             db.session.add(dm)
             db.session.commit()
-            flash(\"Message sent.\", \"success\")
+            flash("Message sent.", "success")
             return redirect(
-                url_for(\"coach_thread\", team_id=team_id, athlete_id=athlete_id)
+                url_for("coach_thread", team_id=team_id, athlete_id=athlete_id)
             )
 
         thread_messages = (
@@ -828,7 +830,7 @@ def create_app(config_class=Config):
         )
         updated = False
         for msg in thread_messages:
-            if msg.sender_role == \"athlete\" and not msg.read_by_coach:
+            if msg.sender_role == "athlete" and not msg.read_by_coach:
                 msg.read_by_coach = True
                 updated = True
         if updated:
@@ -837,7 +839,7 @@ def create_app(config_class=Config):
             g.name for g in athlete.groups.filter(Group.team_id == team.id).all()
         ]
         return render_template(
-            \"team_messages.html\",
+            "team_messages.html",
             team=team,
             coach=current_user,
             athlete=athlete,
@@ -846,18 +848,20 @@ def create_app(config_class=Config):
             is_coach=True,
         )
 
-    @app.route(\"/team/<int:team_id>/messages/<int:athlete_id>/resolve\", methods=[\"POST\"])
+    @app.route(
+        "/team/<int:team_id>/messages/<int:athlete_id>/resolve", methods=["POST"]
+    )
     @login_required
     def resolve_thread(team_id, athlete_id):
-        \"\"\"Coach-only: mark a conversation as resolved.\"\"\"
+        """Coach-only: mark a conversation as resolved."""
         team = Team.query.get_or_404(team_id)
         if not _is_head_coach(team):
-            flash(\"You cannot resolve messages for this team.\", \"error\")
-            return redirect(url_for(\"dashboard\"))
+            flash("You cannot resolve messages for this team.", "error")
+            return redirect(url_for("dashboard"))
         athlete = Athlete.query.get_or_404(athlete_id)
         if not team.athletes.filter(Athlete.id == athlete.id).first():
-            flash(\"Athlete is not on this team.\", \"error\")
-            return redirect(url_for(\"dashboard\"))
+            flash("Athlete is not on this team.", "error")
+            return redirect(url_for("dashboard"))
         thread_messages = DirectMessage.query.filter_by(
             team_id=team.id, coach_id=current_user.id, athlete_id=athlete.id
         ).all()
@@ -865,8 +869,8 @@ def create_app(config_class=Config):
             msg.resolved = True
         if thread_messages:
             db.session.commit()
-            flash(\"Conversation marked as resolved.\", \"success\")
-        return redirect(url_for(\"coach_thread\", team_id=team_id, athlete_id=athlete_id))
+            flash("Conversation marked as resolved.", "success")
+        return redirect(url_for("coach_thread", team_id=team_id, athlete_id=athlete_id))
 
     @app.route("/team/<int:team_id>/roster/remove", methods=["POST"])
     @login_required
