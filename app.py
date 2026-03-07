@@ -80,12 +80,11 @@ def create_app(config_class=Config):
             role = request.form.get("role", "").strip().lower()
             if not name or not email or not password:
                 flash("Name, email, and password are required.", "error")
-                teams = Team.query.order_by(Team.name).all()
-                return render_template("register.html", teams=teams)
+                return render_template("register.html")
             if role == "coach":
                 if Coach.query.filter_by(email=email).first():
                     flash("An account with that email already exists.", "error")
-                    return render_template("register.html", teams=Team.query.order_by(Team.name).all())
+                    return render_template("register.html")
                 coach = Coach(name=name, email=email)
                 coach.set_password(password)
                 db.session.add(coach)
@@ -94,32 +93,19 @@ def create_app(config_class=Config):
                 flash("Account created. Welcome!", "success")
                 return redirect(url_for("coach_dashboard"))
             if role == "athlete":
-                team_id = request.form.get("team_id", type=int)
-                if not team_id:
-                    flash("Please select a team.", "error")
-                    teams = Team.query.order_by(Team.name).all()
-                    return render_template("register.html", teams=teams)
-                team = Team.query.get(team_id)
-                if not team:
-                    flash("Invalid team.", "error")
-                    teams = Team.query.order_by(Team.name).all()
-                    return render_template("register.html", teams=teams)
                 if Athlete.query.filter_by(email=email).first():
                     flash("An account with that email already exists.", "error")
-                    teams = Team.query.order_by(Team.name).all()
-                    return render_template("register.html", teams=teams)
-                athlete = Athlete(name=name, email=email, team_id=team_id)
+                    return render_template("register.html")
+                athlete = Athlete(name=name, email=email)
                 athlete.set_password(password)
                 db.session.add(athlete)
                 db.session.commit()
                 login_user(athlete)
-                flash("Account created. Welcome!", "success")
+                flash("Account created. Welcome! Join a team from your dashboard.", "success")
                 return redirect(url_for("athlete_dashboard"))
             flash("Please select coach or athlete.", "error")
-            teams = Team.query.order_by(Team.name).all()
-            return render_template("register.html", teams=teams)
-        teams = Team.query.order_by(Team.name).all()
-        return render_template("register.html", teams=teams)
+            return render_template("register.html")
+        return render_template("register.html")
 
     @app.route("/logout")
     def logout():
@@ -147,7 +133,11 @@ def create_app(config_class=Config):
             if not name:
                 flash("Team name is required.", "error")
                 return render_template("team_create.html")
-            team = Team(name=name, coach_id=current_user.id)
+            team = Team(
+                name=name,
+                coach_id=current_user.id,
+                invite_code=Team.generate_invite_code(),
+            )
             db.session.add(team)
             db.session.commit()
             flash("Team created successfully.", "success")
@@ -158,48 +148,47 @@ def create_app(config_class=Config):
     @login_required
     def athlete_dashboard():
         """Athlete-only: view assignments and personal info."""
-        # TODO: implement — ensure current_user is Athlete
-        return render_template("athlete_dashboard.html")
+        if not isinstance(current_user, Athlete):
+            return redirect(url_for("coach_dashboard"))
+        teams = current_user.teams.all()
+        return render_template("athlete_dashboard.html", teams=teams)
 
     @app.route("/roster")
     @login_required
     def roster():
-        """List athletes for the current coach/context."""
+        """List athletes for the current coach/context (across all coach's teams)."""
         if not isinstance(current_user, Coach):
             return redirect(url_for("athlete_dashboard"))
-        team_ids = [t.id for t in current_user.teams.all()]
-        athletes = Athlete.query.filter(Athlete.team_id.in_(team_ids)).all() if team_ids else []
+        athletes = (
+            Athlete.query.filter(Athlete.teams.any(Team.coach_id == current_user.id))
+            .distinct()
+            .all()
+        )
         return render_template("roster.html", athletes=athletes)
 
-    @app.route("/roster/add", methods=["GET", "POST"])
+    @app.route("/team/join", methods=["GET", "POST"])
     @login_required
-    def add_athlete():
-        """Show form to add athlete (GET) or create athlete and persist (POST)."""
-        if not isinstance(current_user, Coach):
-            return redirect(url_for("athlete_dashboard"))
-        teams = current_user.teams.all()
+    def join_team():
+        """Show form to join team by invite code (GET) or add athlete to team (POST)."""
+        if not isinstance(current_user, Athlete):
+            return redirect(url_for("coach_dashboard"))
         if request.method == "POST":
-            name = request.form.get("name", "").strip()
-            email = request.form.get("email", "").strip()
-            password = request.form.get("password", "")
-            team_id = request.form.get("team_id", type=int)
-            if not name or not email or not password or not team_id:
-                flash("Name, email, password, and team are required.", "error")
-                return render_template("add_athlete.html", teams=teams)
-            team = Team.query.get(team_id)
-            if not team or team.coach_id != current_user.id:
-                flash("Invalid team.", "error")
-                return render_template("add_athlete.html", teams=teams)
-            if Athlete.query.filter_by(email=email).first():
-                flash("An athlete with that email already exists.", "error")
-                return render_template("add_athlete.html", teams=teams)
-            athlete = Athlete(name=name, email=email, team_id=team_id)
-            athlete.set_password(password)
-            db.session.add(athlete)
+            code = request.form.get("invite_code", "").strip().upper()
+            if not code:
+                flash("Please enter an invite code.", "error")
+                return render_template("join_team.html")
+            team = Team.query.filter_by(invite_code=code).first()
+            if not team:
+                flash("Invalid or unknown invite code.", "error")
+                return render_template("join_team.html")
+            if current_user.teams.filter(Team.id == team.id).first():
+                flash("You are already on this team.", "info")
+                return redirect(url_for("athlete_dashboard"))
+            team.athletes.append(current_user)
             db.session.commit()
-            flash("Athlete added successfully.", "success")
-            return redirect(url_for("roster"))
-        return render_template("add_athlete.html", teams=teams)
+            flash("You have joined the team.", "success")
+            return redirect(url_for("athlete_dashboard"))
+        return render_template("join_team.html")
 
     with app.app_context():
         db.create_all()

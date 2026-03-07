@@ -6,11 +6,22 @@ Who works here: Backend.
 Responsibilities: Define columns and relationships; keep DB logic here, not in routes.
 """
 
+import random
+import string
 from datetime import datetime
+
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from extensions import db
+
+
+# Many-to-many: athletes can be on multiple teams
+athlete_teams = db.Table(
+    "athlete_teams",
+    db.Column("athlete_id", db.Integer, db.ForeignKey("athletes.id"), primary_key=True),
+    db.Column("team_id", db.Integer, db.ForeignKey("teams.id"), primary_key=True),
+)
 
 
 class Coach(UserMixin, db.Model):
@@ -41,23 +52,36 @@ class Coach(UserMixin, db.Model):
 
 
 class Team(db.Model):
-    """Team: belongs to a coach; has many athletes."""
+    """Team: belongs to a coach; has many athletes via join table."""
 
     __tablename__ = "teams"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     coach_id = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
+    invite_code = db.Column(db.String(8), unique=True, nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    athletes = db.relationship("Athlete", backref="team", lazy="dynamic", foreign_keys="Athlete.team_id")
+    # Many-to-many with Athlete via athlete_teams
+    athletes = db.relationship(
+        "Athlete",
+        secondary=athlete_teams,
+        backref=db.backref("teams", lazy="dynamic"),
+        lazy="dynamic",
+    )
 
-    # TODO: add_athlete(athlete: "Athlete") -> None
-    # TODO: roster list / get_roster() -> list[Athlete]
+    @classmethod
+    def generate_invite_code(cls) -> str:
+        """Generate a random 8-character invite code that is unique in the database."""
+        for _ in range(100):
+            code = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            if not cls.query.filter_by(invite_code=code).first():
+                return code
+        raise RuntimeError("Could not generate unique invite code")
 
 
 class Athlete(UserMixin, db.Model):
-    """Athlete: belongs to a team (and thus to that team's coach)."""
+    """Athlete: can be on multiple teams via athlete_teams join table."""
 
     __tablename__ = "athletes"
 
@@ -65,7 +89,6 @@ class Athlete(UserMixin, db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(255), nullable=False)
-    team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password: str) -> None:

@@ -8,6 +8,24 @@
 {% block content %}
 <h1>Athlete Dashboard</h1>
 
+<section class="join-team">
+    <h2>Join a team</h2>
+    <p><a href="{{ url_for('join_team') }}">Join a team with an invite code</a></p>
+</section>
+
+<section class="my-teams">
+    <h2>My teams</h2>
+    {% if teams %}
+    <ul>
+        {% for team in teams %}
+        <li>{{ team.name }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>You are not on any teams yet. Use an invite code from your coach to join.</p>
+    {% endif %}
+</section>
+
 <section class="assignments">
     <h2>Assignments</h2>
     <p>No assignments.</p>

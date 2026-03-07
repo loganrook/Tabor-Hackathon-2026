@@ -1,0 +1,17 @@
+{# join_team.html — Join a team by invite code (athlete only).
+   Purpose: Form to enter an invite code and join that team.
+   Who works here: Frontend.
+   Responsibilities: Form posts to join_team route. #}
+{% extends "base.html" %}
+{% block title %}Join a Team — Coach–Athlete App{% endblock %}
+
+{% block content %}
+<h1>Join a Team</h1>
+<p>Enter the invite code shared by your coach to join their team.</p>
+<form action="{{ url_for('join_team') }}" method="post" class="join-team-form">
+    <label for="invite_code">Invite code</label>
+    <input type="text" id="invite_code" name="invite_code" maxlength="8" placeholder="e.g. ABC12XYZ" required>
+    <button type="submit">Join team</button>
+</form>
+<p><a href="{{ url_for('athlete_dashboard') }}">Back to dashboard</a></p>
+{% endblock %}
