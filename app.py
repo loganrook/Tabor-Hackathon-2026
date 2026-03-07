@@ -183,7 +183,15 @@ def create_app(config_class=Config):
             .distinct()
             .all()
         )
-        return render_template("roster.html", athletes=athletes)
+        team_names_by_athlete = {
+            a.id: [t.name for t in a.teams if t.coach_id == current_user.id]
+            for a in athletes
+        }
+        return render_template(
+            "roster.html",
+            athletes=athletes,
+            team_names_by_athlete=team_names_by_athlete,
+        )
 
     @app.route("/team/join", methods=["GET", "POST"])
     @login_required

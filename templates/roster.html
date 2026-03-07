@@ -1,7 +1,7 @@
 {# roster.html — Roster list view.
    Purpose: Table of athletes for the current coach/context.
    Who works here: Frontend.
-   Responsibilities: Table with Name, Email, Actions; backend data binding later. #}
+   Responsibilities: Table with Name, Email, Team. #}
 {% extends "base.html" %}
 {% block title %}Roster — Coach–Athlete App{% endblock %}
 
@@ -12,7 +12,7 @@
         <tr>
             <th>Name</th>
             <th>Email</th>
-            <th>Actions</th>
+            <th>Team</th>
         </tr>
     </thead>
     <tbody>
@@ -21,7 +21,7 @@
         <tr>
             <td>{{ athlete.name }}</td>
             <td>{{ athlete.email }}</td>
-            <td>—</td>
+            <td>{{ team_names_by_athlete.get(athlete.id, []) | join(', ') or '—' }}</td>
         </tr>
         {% endfor %}
         {% else %}
