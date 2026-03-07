@@ -3,15 +3,19 @@
    Who works here: Frontend.
    Responsibilities: Form posts to join_team route. #}
 {% extends "base.html" %}
-{% block title %}Join a Team — Coach–Athlete App{% endblock %}
+{% block title %}Join a Team — CoachHub{% endblock %}
 
 {% block content %}
-<h1>Join a Team</h1>
-<p>Enter the invite code shared by your coach to join their team.</p>
-<form action="{{ url_for('join_team') }}" method="post" class="join-team-form">
-    <label for="invite_code">Invite code</label>
-    <input type="text" id="invite_code" name="invite_code" maxlength="8" placeholder="e.g. ABC12XYZ" required>
-    <button type="submit">Join team</button>
-</form>
-<p><a href="{{ url_for('athlete_dashboard') }}">Back to dashboard</a></p>
+<div class="auth-card">
+    <h1><i class="bi bi-box-arrow-in-right text-primary"></i> Join a Team</h1>
+    <p class="text-muted text-center">Enter the invite code shared by your coach.</p>
+    <form action="{{ url_for('join_team') }}" method="post">
+        <div class="mb-3">
+            <label for="invite_code" class="form-label">Invite code</label>
+            <input type="text" class="form-control text-center font-monospace fs-5" id="invite_code" name="invite_code" maxlength="8" placeholder="ABC12XYZ" style="letter-spacing:0.15em" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Join team</button>
+    </form>
+    <p class="auth-footer"><a href="{{ url_for('athlete_dashboard') }}"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
+</div>
 {% endblock %}

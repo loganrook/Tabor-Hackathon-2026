@@ -2,8 +2,46 @@
    Purpose: Landing page content.
    Who works here: Frontend. #}
 {% extends "base.html" %}
-{% block title %}Home — Coach–Athlete App{% endblock %}
+{% block title %}CoachHub — Team Management{% endblock %}
 {% block content %}
-<h1>Welcome</h1>
-<p>Coach–Athlete management platform. Use the nav to log in or view dashboards.</p>
+<div class="text-center py-5">
+    <h1 class="display-5 fw-bold mb-3" style="color: var(--brand-dark)">
+        <i class="bi bi-trophy text-primary"></i> Welcome to CoachHub
+    </h1>
+    <p class="lead text-muted mb-4">The simplest way for coaches and athletes to connect, organize teams, and stay on track.</p>
+    {% if not current_user.is_authenticated %}
+    <div class="d-flex justify-content-center gap-3">
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg px-4">
+            <i class="bi bi-person-plus"></i> Get Started
+        </a>
+        <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-lg px-4">
+            Log in
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row g-4 mt-2 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm text-center p-4">
+            <i class="bi bi-clipboard2-pulse display-4 text-primary mb-3"></i>
+            <h5 class="fw-bold">Manage Teams</h5>
+            <p class="text-muted">Coaches create teams and share invite codes. Athletes join in seconds.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm text-center p-4">
+            <i class="bi bi-people display-4 text-primary mb-3"></i>
+            <h5 class="fw-bold">Track Rosters</h5>
+            <p class="text-muted">See every athlete across all your teams in one clean roster view.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm text-center p-4">
+            <i class="bi bi-lightning display-4 text-primary mb-3"></i>
+            <h5 class="fw-bold">Stay Connected</h5>
+            <p class="text-muted">Athletes see their teams and assignments from a single dashboard.</p>
+        </div>
+    </div>
+</div>
 {% endblock %}

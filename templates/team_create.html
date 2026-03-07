@@ -3,14 +3,18 @@
    Who works here: Frontend.
    Responsibilities: Form posts to create_team route. #}
 {% extends "base.html" %}
-{% block title %}Create Team — Coach–Athlete App{% endblock %}
+{% block title %}Create Team — CoachHub{% endblock %}
 
 {% block content %}
-<h1>Create Team</h1>
-<form action="{{ url_for('create_team') }}" method="post" class="team-create-form">
-    <label for="name">Team name</label>
-    <input type="text" id="name" name="name" required>
-    <button type="submit">Create team</button>
-</form>
-<p><a href="{{ url_for('coach_dashboard') }}">Back to dashboard</a></p>
+<div class="auth-card">
+    <h1><i class="bi bi-plus-circle text-primary"></i> Create Team</h1>
+    <form action="{{ url_for('create_team') }}" method="post">
+        <div class="mb-3">
+            <label for="name" class="form-label">Team name</label>
+            <input type="text" class="form-control" id="name" name="name" placeholder="e.g. Varsity Track" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Create team</button>
+    </form>
+    <p class="auth-footer"><a href="{{ url_for('coach_dashboard') }}"><i class="bi bi-arrow-left"></i> Back to dashboard</a></p>
+</div>
 {% endblock %}
