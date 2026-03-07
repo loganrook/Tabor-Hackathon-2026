@@ -294,7 +294,7 @@ def create_app(config_class=Config):
             return redirect(url_for("dashboard"))
         athletes = team.athletes.all()
         groups = team.groups.order_by(Group.name).all()
-        announcements = (
+        all_announcements = (
             team.announcements.order_by(Announcement.created_at.desc()).limit(50).all()
         )
         all_assignments = (
@@ -318,6 +318,13 @@ def create_app(config_class=Config):
                 or a.group_id is None
                 or a.group_id in athlete_group_ids
             ]
+            announcements = [
+                ann
+                for ann in all_announcements
+                if ann.group_id is None or ann.group_id in athlete_group_ids
+            ]
+        if is_coach:
+            announcements = all_announcements
 
         # Coach: completion counts per assignment (completed, total)
         # Athlete: their AssignmentStatus per assignment
@@ -390,12 +397,23 @@ def create_app(config_class=Config):
             flash("You cannot post announcements for this team.", "error")
             return redirect(url_for("dashboard"))
         content = request.form.get("content", "").strip()
+        announce_to = request.form.get("announce_to", "").strip()
+        group_id = None
         if not content:
             flash("Announcement cannot be empty.", "error")
             return redirect(url_for("team_dashboard", team_id=team_id))
+        if announce_to.startswith("g"):
+            try:
+                raw_id = int(announce_to[1:])
+                group = Group.query.filter_by(id=raw_id, team_id=team_id).first()
+                if group:
+                    group_id = group.id
+            except (TypeError, ValueError):
+                group_id = None
         ann = Announcement(
             content=content,
             team_id=team_id,
+            group_id=group_id,
             created_by=current_user.id,
         )
         db.session.add(ann)
