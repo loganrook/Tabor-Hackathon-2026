@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Workouts — {{ team.name }}{% endblock %}
+{% block content %}
+<div class="team-dash-wrapper">
+    {% include "_team_sidebar.html" %}
+
+    <main class="team-dash-main">
+        {% include "_team_topbar.html" %}
+
+        <div class="team-dash-content">
+            <div class="team-page-content">
+                <div class="team-page-heading-row">
+                    <h2 class="team-page-heading">Workouts</h2>
+                    {% if is_coach %}
+                    <a href="{{ url_for('create_team_workout', team_id=team.id) }}" class="btn-secondary">
+                        <i class="bi bi-plus-lg"></i> New Workout
+                    </a>
+                    {% endif %}
+                </div>
+
+                {% if workouts %}
+                <div class="workout-list">
+                    {% for w in workouts %}
+                    {% if is_coach %}
+                        {% set progress = coach_progress.get(w.id, (0, 0)) %}
+                    {% else %}
+                        {% set progress = athlete_progress.get(w.id, (0, 0)) %}
+                    {% endif %}
+                    <a href="{{ url_for('workout_detail', team_id=team.id, workout_id=w.id) }}" class="team-group-card-link">
+                        <div class="workout-card">
+                            <p class="workout-title">{{ w.title }}</p>
+                            <p class="workout-badges">
+                                {% if w.group_id and w.group %}
+                                <span class="workout-badge workout-badge-group">{{ w.group.name }}</span>
+                                {% else %}
+                                <span class="workout-badge workout-badge-team">Entire Team</span>
+                                {% endif %}
+                            </p>
+                            {% if w.due_date %}
+                            <p class="workout-due">Due {{ w.due_date|fmt_datetime }}</p>
+                            {% endif %}
+
+                            {% if progress %}
+                            <div class="workout-progress">
+                                <div class="progress-bar">
+                                    {% set pct = (progress[0] / progress[1] * 100) if progress[1] > 0 else 0 %}
+                                    <div class="progress-fill" data-pct="{{ '%.0f' % pct }}"></div>
+                                </div>
+                                <p class="workout-progress-text">
+                                    {{ progress[0] }}/{{ progress[1] }}
+                                    {% if is_coach %}completions{% else %}exercises complete{% endif %}
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon"><i class="bi bi-clipboard-check"></i></div>
+                    <p>No workouts yet.</p>
+                    {% if is_coach %}
+                    <a href="{{ url_for('create_team_workout', team_id=team.id) }}" class="btn-secondary">Create the first workout</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+(function() {
+    var sidebar = document.getElementById('team-sidebar');
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+        });
+    }
+})();
+</script>
+{% endblock %}
+

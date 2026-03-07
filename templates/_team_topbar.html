@@ -14,9 +14,9 @@
             {% elif request.endpoint == 'team_groups' %}
                 <span class="team-topbar-crumb-separator">›</span>
                 <span class="team-topbar-crumb-sub">Groups</span>
-            {% elif request.endpoint == 'assignment_completions' %}
+            {% elif request.endpoint in ['workout_detail', 'workout_edit'] %}
                 <span class="team-topbar-crumb-separator">›</span>
-                <span class="team-topbar-crumb-sub">Completion</span>
+                <span class="team-topbar-crumb-sub">Workout</span>
             {% endif %}
         {% elif request.endpoint == 'dashboard' %}
             GamePlan

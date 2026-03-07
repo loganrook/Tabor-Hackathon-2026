@@ -1,9 +1,20 @@
 /**
- * Team dashboard calendar: prev/next month, day click to show day detail (assignments + announcements).
- * Uses CALENDAR_DATA from the page (assignments, announcements, today).
+ * Team dashboard calendar: prev/next month, day click to show day detail (workouts + announcements).
+ * Uses CALENDAR_DATA from the page (workouts, announcements, today).
  */
 (function() {
-    var DATA = window.CALENDAR_DATA;
+    var root = document.getElementById('calendar-section');
+    var DATA = null;
+    if (root) {
+        var raw = root.getAttribute('data-calendar');
+        if (raw) {
+            try {
+                DATA = JSON.parse(raw);
+            } catch (e) {
+                DATA = null;
+            }
+        }
+    }
     if (!DATA) return;
 
     var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -35,11 +46,10 @@
     }
 
     function getActivityDays(y, m) {
-        var key = y + '-' + m;
         var days = {};
-        DATA.assignments.forEach(function(a) {
-            if (a.due_date) {
-                var parts = a.due_date.split('-');
+        (DATA.workouts || []).forEach(function(w) {
+            if (w.due_date) {
+                var parts = w.due_date.split('-');
                 if (parseInt(parts[0], 10) === y && parseInt(parts[1], 10) === m) {
                     var day = parseInt(parts[2], 10);
                     days[day] = true;
@@ -83,13 +93,13 @@
 
             var key = dateKey(y, m, d);
             var preview = null;
-            for (var iAssign = 0; iAssign < DATA.assignments.length; iAssign++) {
-                var a = DATA.assignments[iAssign];
-                if (a.due_date === key) {
-                    preview = a.title || '';
-                    break;
+            (DATA.workouts || []).some(function(w) {
+                if (w.due_date === key) {
+                    preview = w.title || '';
+                    return true;
                 }
-            }
+                return false;
+            });
 
             html += '<div class="' + classes + '" data-year="' + y + '" data-month="' + m + '" data-day="' + d + '"' +
                 ' tabindex="0" role="button" aria-label="View ' + MONTHS[m - 1] + ' ' + d + ', ' + y + '">';
@@ -140,8 +150,8 @@
         var key = dateKey(y, m, d);
         var dateLabel = MONTHS[m - 1] + ' ' + d + ', ' + y;
 
-        var assignList = DATA.assignments.filter(function(a) {
-            return a.due_date === key;
+        var workoutList = (DATA.workouts || []).filter(function(w) {
+            return w.due_date === key;
         });
         var annList = DATA.announcements.filter(function(ann) {
             return ann.created_at && ann.created_at.slice(0, 10) === key;
@@ -153,16 +163,16 @@
         var monthTitleEl = document.getElementById('calendar-month-title');
         if (monthTitleEl) monthTitleEl.textContent = dateLabel;
 
-        var assignEl = document.getElementById('calendar-day-assignments');
-        if (assignEl) {
-            if (assignList.length === 0) {
-                assignEl.innerHTML = '<p class="empty-state empty-state-inline">No assignments due this day.</p>';
+        var workoutsEl = document.getElementById('calendar-day-workouts');
+        if (workoutsEl) {
+            if (workoutList.length === 0) {
+                workoutsEl.innerHTML = '<p class="empty-state empty-state-inline">No workouts due this day.</p>';
             } else {
-                assignEl.innerHTML = '<h3 class="calendar-day-subheading">Assignments due</h3>' + assignList.map(function(a) {
-                    var desc = a.description ? '<p class="assignment-desc">' + escapeHtml(a.description) + '</p>' : '';
-                    var due = a.due_display ? '<p class="assignment-due">' + escapeHtml(a.due_display) + '</p>' : '';
-                    return '<div class="assignment-card">' +
-                        '<p class="assignment-title">' + escapeHtml(a.title) + '</p>' + desc + due +
+                workoutsEl.innerHTML = '<h3 class="calendar-day-subheading">Workouts due</h3>' + workoutList.map(function(w) {
+                    var desc = w.description ? '<p class="workout-desc">' + escapeHtml(w.description) + '</p>' : '';
+                    var due = w.due_display ? '<p class="workout-due">' + escapeHtml(w.due_display) + '</p>' : '';
+                    return '<div class="workout-card">' +
+                        '<p class="workout-title">' + escapeHtml(w.title) + '</p>' + desc + due +
                         '</div>';
                 }).join('');
             }

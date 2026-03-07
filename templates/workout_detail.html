@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Workout — {{ team.name }}{% endblock %}
+{% block content %}
+<div class="team-dash-wrapper">
+    {% include "_team_sidebar.html" %}
+
+    <main class="team-dash-main">
+        {% include "_team_topbar.html" %}
+
+        <div class="team-dash-content">
+            <div class="team-page-content">
+                <div class="team-page-subheader">
+                    <a href="{{ url_for('team_workouts', team_id=team.id) }}" class="back-link">← Back to workouts</a>
+                </div>
+
+                <h2 class="team-page-heading">{{ workout.title }}</h2>
+
+                {% if workout.description %}
+                <p class="text-muted" style="margin-top:-0.25rem; margin-bottom:0.75rem;">{{ workout.description }}</p>
+                {% endif %}
+
+                <p class="workout-badges">
+                    {% if workout.group_id and workout.group %}
+                    <span class="workout-badge workout-badge-group">{{ workout.group.name }}</span>
+                    {% else %}
+                    <span class="workout-badge workout-badge-team">Entire Team</span>
+                    {% endif %}
+                    {% if workout.due_date %}
+                    <span class="workout-due">Due {{ workout.due_date|fmt_datetime }}</span>
+                    {% endif %}
+                </p>
+
+                {% if is_coach and overall_total %}
+                <div class="workout-progress" style="margin-top:1rem; max-width:340px;">
+                    <div class="progress-bar">
+                        {% set overall_pct = (overall_completed / overall_total * 100) if overall_total > 0 else 0 %}
+                        <div class="progress-fill" style="width: {{ '%.0f' % overall_pct }}%;"></div>
+                    </div>
+                    <p class="workout-progress-text">
+                        {{ overall_completed }}/{{ overall_total }} exercise completions
+                    </p>
+                </div>
+                {% endif %}
+
+                <div class="exercise-list" style="margin-top:1.5rem;">
+                    {% if exercises %}
+                    {% for ex in exercises %}
+                    {% if is_coach %}
+                        {% set ex_progress = exercise_progress.get(ex.id, (0, 0)) %}
+                        {% set completed = ex_progress[0] %}
+                        {% set total = ex_progress[1] %}
+                    {% else %}
+                        {% set status = athlete_statuses.get(ex.id) %}
+                    {% endif %}
+                    <div class="exercise-row{% if not is_coach and status and status.completed %} completed{% endif %}">
+                        {% if not is_coach %}
+                        <form method="post"
+                              action="{{ url_for('exercise_toggle_complete', exercise_id=ex.id) }}"
+                              class="exercise-toggle-form">
+                            <button type="submit" class="exercise-checkbox" aria-label="Toggle exercise complete">
+                                <span class="exercise-checkbox-inner">✓</span>
+                            </button>
+                        </form>
+                        {% endif %}
+                        <div class="exercise-main">
+                            <p class="exercise-name">{{ ex.name }}</p>
+                            <p class="exercise-meta">
+                                {% if set_plans.get(ex.id) %}
+                                    {% for row in set_plans[ex.id] %}
+                                        Set {{ row.set }}: {{ row.reps }} reps{% if not loop.last %} · {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    {% if ex.sets %}{{ ex.sets }} sets{% endif %}
+                                    {% if ex.sets and ex.reps %} × {% endif %}
+                                    {% if ex.reps %}{{ ex.reps }} reps{% endif %}
+                                {% endif %}
+                            </p>
+                            {% if ex.notes %}
+                            <p class="exercise-notes">{{ ex.notes }}</p>
+                            {% endif %}
+                            {% if is_coach %}
+                                {% if total %}
+                                <p class="workout-progress-text" style="margin-top:0.35rem;">
+                                    {{ completed }}/{{ total }} completed
+                                </p>
+                                {% endif %}
+                            {% else %}
+                                {% if status and status.completed %}
+                                <p class="workout-status-text" style="margin-top:0.35rem;">
+                                    ✓ Complete
+                                </p>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state empty-state-inline">
+                        <p>No exercises added to this workout yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if is_coach %}
+                <div style="margin-top:1.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <a href="{{ url_for('workout_edit', team_id=team.id, workout_id=workout.id) }}" class="btn-secondary btn-small">
+                        <i class="bi bi-pencil"></i> Edit workout
+                    </a>
+                    <form action="{{ url_for('workout_delete', team_id=team.id, workout_id=workout.id) }}"
+                          method="post"
+                          onsubmit="return confirm('Delete this workout?');">
+                        <button type="submit" class="btn-danger btn-small">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+(function() {
+    var sidebar = document.getElementById('team-sidebar');
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+        });
+    }
+})();
+</script>
+{% endblock %}
+

@@ -58,6 +58,14 @@ class Coach(UserMixin, db.Model):
     # Relationship: one coach has many teams they own (head coach per team)
     teams = db.relationship("Team", backref="coach", lazy="dynamic", foreign_keys="Team.coach_id")
 
+    # Relationship: coach's personal workout templates
+    workout_templates = db.relationship(
+        "WorkoutTemplate",
+        backref="coach",
+        lazy="dynamic",
+        foreign_keys="WorkoutTemplate.coach_id",
+    )
+
     __mapper_args__ = {
         "polymorphic_on": coach_type,
         "polymorphic_identity": "coach",
@@ -111,12 +119,12 @@ class Team(db.Model):
         lazy="dynamic",
     )
 
-    # One team has many assignments
-    assignments = db.relationship(
-        "Assignment",
+    # One team has many workouts
+    workouts = db.relationship(
+        "Workout",
         backref="team",
         lazy="dynamic",
-        foreign_keys="Assignment.team_id",
+        foreign_keys="Workout.team_id",
     )
 
     # One team has many announcements
@@ -183,10 +191,48 @@ class Announcement(db.Model):
     )
 
 
-class Assignment(db.Model):
-    """Assignment: created by a coach for a team (or for a specific group)."""
+class WorkoutTemplate(db.Model):
+    """Saved workout template in a coach's library (not tied to a team)."""
 
-    __tablename__ = "assignments"
+    __tablename__ = "workout_templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    coach_id = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=_local_now)
+
+    exercises = db.relationship(
+        "ExerciseTemplate",
+        backref="workout_template",
+        order_by="ExerciseTemplate.order",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
+
+
+class ExerciseTemplate(db.Model):
+    """Exercise row inside a workout template."""
+
+    __tablename__ = "exercise_templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    workout_template_id = db.Column(
+        db.Integer,
+        db.ForeignKey("workout_templates.id"),
+        nullable=False,
+    )
+    name = db.Column(db.String(255), nullable=False)
+    sets = db.Column(db.Integer, nullable=True)
+    reps = db.Column(db.Integer, nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    order = db.Column(db.Integer, nullable=True)
+
+
+class Workout(db.Model):
+    """Assigned workout for a team or group."""
+
+    __tablename__ = "workouts"
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
@@ -194,33 +240,56 @@ class Assignment(db.Model):
     due_date = db.Column(db.DateTime, nullable=True)
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable=True)
-    athlete_id = db.Column(db.Integer, db.ForeignKey("athletes.id"), nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=_local_now)
 
-    group = db.relationship("Group", backref="assignments", foreign_keys="Assignment.group_id")
-    athlete = db.relationship("Athlete", backref="individual_assignments", foreign_keys="Assignment.athlete_id")
+    group = db.relationship("Group", backref="workouts", foreign_keys="Workout.group_id")
 
-    statuses = db.relationship(
-        "AssignmentStatus",
-        backref="assignment",
+    exercises = db.relationship(
+        "Exercise",
+        backref="workout",
+        order_by="Exercise.order",
+        cascade="all, delete-orphan",
         lazy="dynamic",
-        foreign_keys="AssignmentStatus.assignment_id",
     )
 
 
-class AssignmentStatus(db.Model):
-    """Tracks completion of an assignment by an athlete."""
+class Exercise(db.Model):
+    """Exercise row inside a workout."""
 
-    __tablename__ = "assignment_statuses"
+    __tablename__ = "exercises"
 
     id = db.Column(db.Integer, primary_key=True)
-    assignment_id = db.Column(db.Integer, db.ForeignKey("assignments.id"), nullable=False)
+    workout_id = db.Column(db.Integer, db.ForeignKey("workouts.id"), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    sets = db.Column(db.Integer, nullable=True)
+    reps = db.Column(db.Integer, nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    # Optional per-set rep plan, stored as JSON text:
+    # e.g. [{"set": 1, "reps": 12}, {"set": 2, "reps": 10}]
+    set_plan = db.Column(db.Text, nullable=True)
+    order = db.Column(db.Integer, nullable=True)
+
+    statuses = db.relationship(
+        "ExerciseStatus",
+        backref="exercise",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
+
+
+class ExerciseStatus(db.Model):
+    """Tracks completion of an exercise by an athlete."""
+
+    __tablename__ = "exercise_statuses"
+
+    id = db.Column(db.Integer, primary_key=True)
+    exercise_id = db.Column(db.Integer, db.ForeignKey("exercises.id"), nullable=False)
     athlete_id = db.Column(db.Integer, db.ForeignKey("athletes.id"), nullable=False)
     completed = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime, nullable=True)
 
-    athlete = db.relationship("Athlete", backref=db.backref("assignment_statuses", lazy="dynamic"))
+    athlete = db.relationship("Athlete", backref=db.backref("exercise_statuses", lazy="dynamic"))
 
 
 class Athlete(UserMixin, db.Model):
@@ -246,4 +315,4 @@ class Athlete(UserMixin, db.Model):
         """Return a unique id for Flask-Login; prefix so user_loader can distinguish Athlete from Coach."""
         return f"athlete-{self.id}"
 
-    # TODO: Helper methods as needed (e.g. get_assignments, display_name)
+    # TODO: Helper methods as needed (e.g. get_workouts, display_name)

@@ -1,4 +1,4 @@
-{# team_dashboard.html — Top bar (center+right only), sidebar unchanged, center = calendar, right = announcements + assignments. #}
+{# team_dashboard.html — Top bar (center+right only), sidebar unchanged, center = calendar, right = announcements + workouts. #}
 {% extends "base.html" %}
 {% block title %}{{ team.name }} — GamePlan{% endblock %}
 {% block content %}
@@ -34,22 +34,22 @@
                                 <div class="calendar-day calendar-day-empty calendar-day-outside"></div>
                                 {% endfor %}
                                 {% for day in range(1, days_in_month + 1) %}
-                                <div class="calendar-day {{ 'calendar-day-today' if day == cal_today else '' }} {{ 'calendar-day-has-assignment' if day in assignment_due_days else '' }} {{ 'calendar-day-has-announcement' if day in ns.announcement_days else '' }}" data-year="{{ cal_year }}" data-month="{{ cal_month }}" data-day="{{ day }}">
+                                <div class="calendar-day {{ 'calendar-day-today' if day == cal_today else '' }} {{ 'calendar-day-has-workout' if day in workout_due_days else '' }} {{ 'calendar-day-has-announcement' if day in ns.announcement_days else '' }}" data-year="{{ cal_year }}" data-month="{{ cal_month }}" data-day="{{ day }}">
                                     <span class="calendar-day-num">{{ day }}</span>
                                     {% set ns_cell = namespace(done=False) %}
-                                    {% for a in assignments %}
+                                    {% for w in workouts %}
                                         {% if (not ns_cell.done)
-                                              and a.due_date
-                                              and a.due_date.year == cal_year
-                                              and a.due_date.month == cal_month
-                                              and a.due_date.day == day %}
-                                            {% set preview = a.title[:18] %}
-                                            <div class="calendar-preview">{{ preview }}{% if a.title|length > 18 %}…{% endif %}</div>
+                                              and w.due_date
+                                              and w.due_date.year == cal_year
+                                              and w.due_date.month == cal_month
+                                              and w.due_date.day == day %}
+                                            {% set preview = w.title[:18] %}
+                                            <div class="calendar-preview">{{ preview }}{% if w.title|length > 18 %}…{% endif %}</div>
                                             {% set ns_cell.done = True %}
                                         {% endif %}
                                     {% endfor %}
                                     <span class="calendar-dots">
-                                        {% if day in assignment_due_days %}<span class="calendar-dot calendar-dot-assignment" title="Assignments due"></span>{% endif %}
+                                        {% if day in workout_due_days %}<span class="calendar-dot calendar-dot-workout" title="Workouts due"></span>{% endif %}
                                         {% if day in ns.announcement_days %}<span class="calendar-dot calendar-dot-announcement" title="Announcements"></span>{% endif %}
                                     </span>
                                 </div>
@@ -60,7 +60,7 @@
                     <div class="calendar-day-view hidden" id="calendar-day-view">
                         <h2 class="calendar-day-view-title" id="calendar-day-view-title"></h2>
                         <button type="button" class="btn-secondary back-to-calendar" id="back-to-calendar">← Back to calendar</button>
-                        <div class="calendar-day-assignments" id="calendar-day-assignments"></div>
+                        <div class="calendar-day-workouts" id="calendar-day-workouts"></div>
                         <div class="calendar-day-announcements" id="calendar-day-announcements"></div>
                     </div>
                 </section>
@@ -107,53 +107,48 @@
                     </div>
                 </div>
 
-                <div class="team-right-box team-right-assignments">
+                <div class="team-right-box team-right-workouts">
                     <div class="team-right-box-header">
-                        <h2 class="team-right-box-title">Assignments</h2>
+                        <h2 class="team-right-box-title">Workouts</h2>
                         {% if is_coach %}
-                        <a href="{{ url_for('create_team_assignment', team_id=team.id) }}" class="team-right-box-plus" aria-label="New Assignment" title="New Assignment"><i class="bi bi-plus-lg"></i></a>
+                        <a href="{{ url_for('create_team_workout', team_id=team.id) }}" class="team-right-box-plus" aria-label="New Workout" title="New Workout"><i class="bi bi-plus-lg"></i></a>
                         {% endif %}
                     </div>
                     <div class="team-right-box-inner">
-                        {% if assignments %}
-                        <div class="assignment-list" id="assignment-list">
-                            {% for a in assignments %}
-                            <div class="assignment-card {{ 'assignment-card-completed' if not is_coach and assignment_status_by_athlete.get(a.id) and assignment_status_by_athlete[a.id].completed else '' }}" data-group-id="{{ a.group_id or '' }}">
-                                {% if is_coach %}
-                                <p class="assignment-title"><a href="{{ url_for('assignment_completions', assignment_id=a.id) }}" class="assignment-title-link">{{ a.title }}</a></p>
-                                {% else %}
-                                <p class="assignment-title">{{ a.title }}</p>
-                                {% endif %}
-                                <p class="assignment-badges">
-                                    {% if a.athlete_id and a.athlete %}
-                                    <span class="assignment-badge assignment-badge-individual">{{ a.athlete.name }}</span>
-                                    {% elif a.group_id and a.group %}
-                                    <span class="assignment-badge assignment-badge-group">{{ a.group.name }}</span>
+                        {% if workouts %}
+                        <div class="workout-list" id="workout-list">
+                            {% for w in workouts %}
+                            {% set progress = workout_completion.get(w.id) if is_coach else workout_status_by_athlete.get(w.id) %}
+                            <div class="workout-card {{ 'workout-card-completed' if not is_coach and progress and progress[0] and progress[1] and progress[0] == progress[1] else '' }}" data-group-id="{{ w.group_id or '' }}">
+                                <p class="workout-title">
+                                    <a href="{{ url_for('workout_detail', team_id=team.id, workout_id=w.id) }}" class="workout-title-link">{{ w.title }}</a>
+                                </p>
+                                <p class="workout-badges">
+                                    {% if w.group_id and w.group %}
+                                    <span class="workout-badge workout-badge-group">{{ w.group.name }}</span>
                                     {% else %}
-                                    <span class="assignment-badge assignment-badge-team">Entire Team</span>
+                                    <span class="workout-badge workout-badge-team">Entire Team</span>
                                     {% endif %}
                                 </p>
-                                {% if a.due_date %}<p class="assignment-due">Due {{ a.due_date|fmt_datetime }}</p>{% endif %}
+                                {% if w.due_date %}<p class="workout-due">Due {{ w.due_date|fmt_datetime }}</p>{% endif %}
                                 {% if is_coach %}
-                                {% set completion = assignment_completion.get(a.id, (0, 0)) %}
-                                <p class="assignment-progress-text">{{ completion[0] }}/{{ completion[1] }} completed</p>
-                                <div class="assignment-actions-hover">
-                                    <a href="{{ url_for('edit_assignment', assignment_id=a.id) }}" class="btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
-                                    <form action="{{ url_for('delete_assignment', assignment_id=a.id) }}" method="post" class="assignment-delete-form" onsubmit="return confirm('Delete this assignment?');">
+                                {% set completion = workout_completion.get(w.id, (0, 0)) %}
+                                <div class="workout-progress">
+                                    <div class="progress-bar">
+                                        {% set pct = (completion[0] / completion[1] * 100) if completion[1] > 0 else 0 %}
+                                        <div class="progress-fill" data-pct="{{ '%.0f' % pct }}"></div>
+                                    </div>
+                                    <p class="workout-progress-text">{{ completion[0] }}/{{ completion[1] }} completed</p>
+                                </div>
+                                <div class="workout-actions-hover">
+                                    <a href="{{ url_for('workout_edit', team_id=team.id, workout_id=w.id) }}" class="btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form action="{{ url_for('workout_delete', team_id=team.id, workout_id=w.id) }}" method="post" class="workout-delete-form" onsubmit="return confirm('Delete this workout?');">
                                         <button type="submit" class="btn-icon btn-icon-danger" title="Delete"><i class="bi bi-trash"></i></button>
                                     </form>
                                 </div>
                                 {% else %}
-                                {% set status = assignment_status_by_athlete.get(a.id) %}
-                                {% if status and status.completed %}
-                                <p class="assignment-status-done"><span class="checkmark">✓</span> Complete</p>
-                                <form action="{{ url_for('assignment_uncomplete', assignment_id=a.id) }}" method="post" style="display: inline;">
-                                    <button type="submit" class="btn-small btn-danger-outline">Undo</button>
-                                </form>
-                                {% else %}
-                                <form action="{{ url_for('assignment_complete', assignment_id=a.id) }}" method="post" style="display: inline;">
-                                    <button type="submit" class="btn-primary btn-primary-inline btn-small">Mark Complete</button>
-                                </form>
+                                {% if progress %}
+                                <p class="workout-status-text">{{ progress[0] }}/{{ progress[1] }} exercises complete</p>
                                 {% endif %}
                                 {% endif %}
                             </div>
@@ -162,7 +157,7 @@
                         {% else %}
                         <div class="empty-state empty-state-inline empty-state-compact">
                             <div class="empty-state-icon"><i class="bi bi-clipboard-check"></i></div>
-                            <p>No assignments yet.</p>
+                            <p>No workouts yet.</p>
                         </div>
                         {% endif %}
                     </div>
@@ -172,23 +167,6 @@
     </main>
 </div>
 
-<script>
-(function() {
-    window.CALENDAR_DATA = {
-        today: "{{ cal_year }}-{% if cal_month < 10 %}0{% endif %}{{ cal_month }}-{% if cal_today < 10 %}0{% endif %}{{ cal_today }}",
-        assignments: [
-            {% for a in assignments %}
-            { "id": {{ a.id }}, "title": {{ a.title|tojson }}, "description": {{ (a.description or '')|tojson }}, "due_date": {% if a.due_date %}"{{ a.due_date.strftime('%Y-%m-%d') }}"{% else %}null{% endif %}, "due_display": {% if a.due_date %}{{ (a.due_date|fmt_datetime)|tojson }}{% else %}null{% endif %} }{% if not loop.last %},{% endif %}
-            {% endfor %}
-        ],
-        announcements: [
-            {% for ann in announcements %}
-            { "content": {{ ann.content|tojson }}, "created_at": {% if ann.created_at %}"{{ ann.created_at.isoformat() }}"{% else %}null{% endif %}, "is_auto": {{ 'true' if ann.is_auto else 'false' }} }{% if not loop.last %},{% endif %}
-            {% endfor %}
-        ]
-    };
-})();
-</script>
 <script src="{{ url_for('static', filename='team_calendar.js') }}"></script>
 <script>
 (function() {

@@ -15,6 +15,7 @@ from extensions import db, login_manager
 # Import models after extensions so db is available; registers models with Flask-SQLAlchemy
 import calendar as cal_module
 import time
+import json
 from datetime import datetime, date
 
 from validators import validate_password
@@ -22,10 +23,11 @@ from models import (  # noqa: E402, F401
     Coach,
     Athlete,
     Team,
-    Assignment,
     Announcement,
-    AssignmentStatus,
     Group,
+    Workout,
+    Exercise,
+    ExerciseStatus,
 )
 
 # In-memory rate limit for failed logins: ip -> (attempt_count, block_until_timestamp)
@@ -318,11 +320,9 @@ def create_app(config_class=Config):
                     flash("Team name updated.", "success")
                 return redirect(url_for("team_settings", team_id=team_id))
             if action == "delete_team":
-                # Delete in order: AssignmentStatus -> Assignment -> Announcement -> Groups -> Team
-                for assignment in team.assignments.all():
-                    for status in assignment.statuses.all():
-                        db.session.delete(status)
-                    db.session.delete(assignment)
+                # Delete in order: Workouts (cascade to exercises/statuses) -> Announcement -> Groups -> Team
+                for workout in team.workouts.all():
+                    db.session.delete(workout)
                 for ann in team.announcements.all():
                     db.session.delete(ann)
                 for group in list(team.groups.all()):
@@ -338,7 +338,7 @@ def create_app(config_class=Config):
     @app.route("/team/<int:team_id>")
     @login_required
     def team_dashboard(team_id):
-        """Team dashboard: announcements, assignments, completion stats (coach) or statuses (athlete)."""
+        """Team dashboard: announcements, workouts, and completion stats."""
         team = Team.query.get_or_404(team_id)
         if not _user_can_access_team(team):
             flash("You do not have access to this team.", "error")
@@ -350,26 +350,24 @@ def create_app(config_class=Config):
         all_announcements = (
             team.announcements.order_by(Announcement.created_at.desc()).limit(50).all()
         )
-        all_assignments = (
-            Assignment.query.filter_by(team_id=team_id)
-            .order_by(Assignment.created_at.desc())
+        all_workouts = (
+            Workout.query.filter_by(team_id=team_id)
+            .order_by(Workout.created_at.desc())
             .all()
         )
         is_coach = isinstance(current_user, Coach) and team.coach_id == current_user.id
 
-        # Athlete: only see team-wide, group (they're in), or individual (assigned to them)
+        # Athlete: only see team-wide workouts or group workouts (they're in)
         if is_coach:
-            assignments = all_assignments
+            workouts = all_workouts
         else:
             athlete_group_ids = {
                 g.id for g in current_user.groups.filter(Group.team_id == team_id).all()
             }
-            assignments = [
-                a
-                for a in all_assignments
-                if a.athlete_id == current_user.id
-                or a.group_id is None
-                or a.group_id in athlete_group_ids
+            workouts = [
+                w
+                for w in all_workouts
+                if w.group_id is None or w.group_id in athlete_group_ids
             ]
             announcements = [
                 ann
@@ -379,22 +377,38 @@ def create_app(config_class=Config):
         if is_coach:
             announcements = all_announcements
 
-        # Coach: completion counts per assignment (completed, total)
-        # Athlete: their AssignmentStatus per assignment
-        assignment_completion = {}
-        assignment_status_by_athlete = {}
-        for a in assignments:
+        # Coach: completion counts per workout (completed, total exercise statuses)
+        # Athlete: their exercise completion counts per workout
+        workout_completion = {}
+        workout_status_by_athlete = {}
+        for w in workouts:
             if is_coach:
-                total = a.statuses.count()
-                completed = a.statuses.filter_by(completed=True).count()
-                assignment_completion[a.id] = (completed, total)
-            else:
-                status = (
-                    AssignmentStatus.query.filter_by(
-                        assignment_id=a.id, athlete_id=current_user.id
-                    ).first()
+                total = (
+                    ExerciseStatus.query.join(Exercise)
+                    .filter(Exercise.workout_id == w.id)
+                    .count()
                 )
-                assignment_status_by_athlete[a.id] = status
+                completed = (
+                    ExerciseStatus.query.join(Exercise)
+                    .filter(
+                        Exercise.workout_id == w.id,
+                        ExerciseStatus.completed.is_(True),
+                    )
+                    .count()
+                )
+                workout_completion[w.id] = (completed, total)
+            else:
+                total_exercises = Exercise.query.filter_by(workout_id=w.id).count()
+                completed_exercises = (
+                    ExerciseStatus.query.join(Exercise)
+                    .filter(
+                        Exercise.workout_id == w.id,
+                        ExerciseStatus.athlete_id == current_user.id,
+                        ExerciseStatus.completed.is_(True),
+                    )
+                    .count()
+                )
+                workout_status_by_athlete[w.id] = (completed_exercises, total_exercises)
 
         # Sidebar groups: coach sees all, athlete sees only groups they belong to
         if is_coach:
@@ -405,21 +419,46 @@ def create_app(config_class=Config):
             }
             sidebar_groups = [g for g in groups if g.id in athlete_group_ids]
 
-        # Calendar: current month, days with due dates
+        # Calendar: current month, days with workout due dates
         today = date.today()
         cal_year = today.year
         cal_month = today.month
         first_day = date(cal_year, cal_month, 1)
         days_in_month = cal_module.monthrange(cal_year, cal_month)[1]
         first_weekday = first_day.weekday()
-        assignment_due_days = set()
-        for a in assignments:
+        workout_due_days = set()
+        for w in workouts:
             if (
-                a.due_date
-                and a.due_date.year == cal_year
-                and a.due_date.month == cal_month
+                w.due_date
+                and w.due_date.year == cal_year
+                and w.due_date.month == cal_month
             ):
-                assignment_due_days.add(a.due_date.day)
+                workout_due_days.add(w.due_date.day)
+
+        # Calendar payload for JS (avoids Jinja inside <script>)
+        calendar_payload = {
+            "today": today.strftime("%Y-%m-%d"),
+            "workouts": [
+                {
+                    "id": w.id,
+                    "title": w.title,
+                    "description": w.description or "",
+                    "due_date": w.due_date.strftime("%Y-%m-%d")
+                    if w.due_date
+                    else None,
+                    "due_display": fmt_datetime(w.due_date) if w.due_date else None,
+                }
+                for w in workouts
+            ],
+            "announcements": [
+                {
+                    "content": ann.content,
+                    "created_at": ann.created_at.isoformat() if ann.created_at else None,
+                    "is_auto": ann.is_auto,
+                }
+                for ann in announcements
+            ],
+        }
 
         return render_template(
             "team_dashboard.html",
@@ -428,23 +467,24 @@ def create_app(config_class=Config):
             groups=groups,
             sidebar_groups=sidebar_groups,
             announcements=announcements,
-            assignments=assignments,
+            workouts=workouts,
             is_coach=is_coach,
-            assignment_completion=assignment_completion,
-            assignment_status_by_athlete=assignment_status_by_athlete,
+            workout_completion=workout_completion,
+            workout_status_by_athlete=workout_status_by_athlete,
             cal_year=cal_year,
             cal_month=cal_month,
             days_in_month=days_in_month,
             first_weekday=first_weekday,
             cal_today=today.day,
-            assignment_due_days=assignment_due_days,
+            workout_due_days=workout_due_days,
             cal_month_name=cal_module.month_name[cal_month],
+            calendar_payload=calendar_payload,
         )
 
     @app.route("/team/<int:team_id>/announcement/create", methods=["GET", "POST"])
     @login_required
     def create_team_announcement(team_id):
-        """Coach only: show form (GET) or create announcement (POST). Same pattern as create assignment."""
+        """Coach only: show form (GET) or create announcement (POST)."""
         team = Team.query.get_or_404(team_id)
         if not isinstance(current_user, Coach) or not _user_can_access_team(team):
             flash("You cannot post announcements for this team.", "error")
@@ -604,212 +644,102 @@ def create_app(config_class=Config):
         for group in team.groups.all():
             if athlete in group.athletes.all():
                 group.athletes.remove(athlete)
-        for assignment in team.assignments.all():
-            AssignmentStatus.query.filter_by(
-                assignment_id=assignment.id, athlete_id=athlete_id
-            ).delete()
+        # Remove exercise completion records for this athlete on this team
+        (
+            ExerciseStatus.query.join(Exercise)
+            .join(Workout)
+            .filter(Workout.team_id == team_id, ExerciseStatus.athlete_id == athlete_id)
+            .delete(synchronize_session=False)
+        )
         db.session.commit()
         flash("Athlete removed from team.", "success")
         return redirect(url_for("team_roster", team_id=team_id))
-
-    @app.route("/team/<int:team_id>/assignment/create", methods=["GET", "POST"])
-    @login_required
-    def create_team_assignment(team_id):
-        """Coach-only: create an assignment for this team; create AssignmentStatus for each athlete."""
-        team = Team.query.get_or_404(team_id)
-        if not isinstance(current_user, Coach) or not _user_can_access_team(team):
-            flash("You cannot create assignments for this team.", "error")
-            return redirect(url_for("dashboard"))
-        if request.method == "POST":
-            title = request.form.get("title", "").strip()
-            description = request.form.get("description", "").strip() or None
-            due_date = None
-            due_str = request.form.get("due_date", "").strip()
-            if due_str:
-                try:
-                    due_date = datetime.strptime(due_str, "%Y-%m-%d").replace(
-                        hour=23, minute=59, second=0, microsecond=0
-                    )
-                except ValueError:
-                    pass
-            assign_to = request.form.get("assign_to", "").strip()
-            group_id = None
-            athlete_id = None
-            if assign_to.startswith("g"):
-                try:
-                    group_id = int(assign_to[1:])
-                    g = Group.query.filter_by(id=group_id, team_id=team_id).first()
-                    if not g:
-                        group_id = None
-                except (ValueError, TypeError):
-                    group_id = None
-            elif assign_to.startswith("a"):
-                try:
-                    athlete_id = int(assign_to[1:])
-                    ath = Athlete.query.get(athlete_id)
-                    if not ath or not ath.teams.filter(Team.id == team_id).first():
-                        athlete_id = None
-                except (ValueError, TypeError):
-                    athlete_id = None
-            if not title:
-                flash("Title is required.", "error")
-                return render_template(
-                    "create_assignment.html",
-                    team=team,
-                    groups=team.groups.order_by(Group.name).all(),
-                    athletes=team.athletes.order_by(Athlete.name).all(),
-                )
-            assignment = Assignment(
-                title=title,
-                description=description,
-                due_date=due_date,
-                team_id=team_id,
-                group_id=group_id if not athlete_id else None,
-                athlete_id=athlete_id,
-                created_by=current_user.id,
-            )
-            db.session.add(assignment)
-            db.session.flush()
-            if athlete_id:
-                target_athletes = [Athlete.query.get(athlete_id)]
-            elif group_id:
-                group = Group.query.get(group_id)
-                target_athletes = group.athletes.all()
-            else:
-                target_athletes = team.athletes.all()
-            for athlete in target_athletes:
-                status = AssignmentStatus(
-                    assignment_id=assignment.id,
-                    athlete_id=athlete.id,
-                    completed=False,
-                )
-                db.session.add(status)
-            db.session.commit()
-            flash("Assignment created.", "success")
-            return redirect(url_for("team_dashboard", team_id=team_id))
-        return render_template(
-            "create_assignment.html",
-            team=team,
-            groups=team.groups.order_by(Group.name).all(),
-            athletes=team.athletes.order_by(Athlete.name).all(),
-        )
-
-    @app.route("/assignment/<int:assignment_id>/complete", methods=["POST"])
-    @login_required
-    def assignment_complete(assignment_id):
-        """Athlete only: mark their AssignmentStatus as completed. Create status if missing (joined later)."""
-        if not isinstance(current_user, Athlete):
-            flash("Only athletes can complete assignments.", "error")
-            return redirect(url_for("dashboard"))
-        assignment = Assignment.query.get_or_404(assignment_id)
-        if not _user_can_access_team(assignment.team):
-            flash("You do not have access to this team.", "error")
-            return redirect(url_for("dashboard"))
-        status = AssignmentStatus.query.filter_by(
-            assignment_id=assignment_id,
-            athlete_id=current_user.id,
-        ).first()
-        if not status:
-            status = AssignmentStatus(
-                assignment_id=assignment_id,
-                athlete_id=current_user.id,
-                completed=True,
-                completed_at=datetime.now(),
-            )
-            db.session.add(status)
-        else:
-            status.completed = True
-            status.completed_at = datetime.now()
-        db.session.commit()
-        flash("Assignment marked complete.", "success")
-        return redirect(url_for("team_dashboard", team_id=assignment.team_id))
-
-    @app.route("/assignment/<int:assignment_id>/uncomplete", methods=["POST"])
-    @login_required
-    def assignment_uncomplete(assignment_id):
-        """Athlete only: undo their own completion of an assignment."""
-        if not isinstance(current_user, Athlete):
-            flash("Only athletes can undo assignment completion.", "error")
-            return redirect(url_for("dashboard"))
-        assignment = Assignment.query.get_or_404(assignment_id)
-        if not _user_can_access_team(assignment.team):
-            flash("You do not have access to this team.", "error")
-            return redirect(url_for("dashboard"))
-        status = AssignmentStatus.query.filter_by(
-            assignment_id=assignment_id,
-            athlete_id=current_user.id,
-        ).first()
-        if status and status.completed:
-            status.completed = False
-            status.completed_at = None
-            db.session.commit()
-            flash("Assignment completion undone.", "success")
-        else:
-            flash("Nothing to undo.", "info")
-        return redirect(url_for("team_dashboard", team_id=assignment.team_id))
 
     def _coach_owns_team(team):
         """Return True if current_user is the coach who owns the team (head coach)."""
         return _is_head_coach(team)
 
-    @app.route("/assignment/<int:assignment_id>/completions")
+    # ----- Workouts -----
+
+    @app.route("/team/<int:team_id>/workouts")
     @login_required
-    def assignment_completions(assignment_id):
-        """Coach only: view who completed this assignment and who has not."""
-        assignment = Assignment.query.get_or_404(assignment_id)
-        team = assignment.team
-        if not _coach_owns_team(team):
-            flash("You cannot view this assignment.", "error")
+    def team_workouts(team_id):
+        """List workouts for a team. Coach: all workouts with progress. Athlete: workouts assigned to them."""
+        team = Team.query.get_or_404(team_id)
+        if not _user_can_access_team(team):
+            flash("You do not have access to this team.", "error")
             return redirect(url_for("dashboard"))
-        # Target athletes (who this assignment is for)
-        if assignment.athlete_id:
-            a = team.athletes.filter(Athlete.id == assignment.athlete_id).first()
-            target_athletes = [a] if a else []
-        elif assignment.group_id:
-            target_athletes = assignment.group.athletes.all()
+
+        all_workouts = (
+            Workout.query.filter_by(team_id=team_id)
+            .order_by(Workout.created_at.desc())
+            .all()
+        )
+        is_coach = isinstance(current_user, Coach)
+
+        if is_coach:
+            workouts = all_workouts
         else:
-            target_athletes = team.athletes.all()
-        completed_list = []
-        not_completed_list = []
-        for athlete in target_athletes:
-            group_names = [
-                g.name for g in athlete.groups.filter(Group.team_id == team.id).all()
+            athlete_group_ids = {
+                g.id for g in current_user.groups.filter(Group.team_id == team_id).all()
+            }
+            workouts = [
+                w
+                for w in all_workouts
+                if w.group_id is None or w.group_id in athlete_group_ids
             ]
-            groups_str = ", ".join(group_names) if group_names else "—"
-            status = AssignmentStatus.query.filter_by(
-                assignment_id=assignment_id, athlete_id=athlete.id
-            ).first()
-            if status and status.completed:
-                completed_list.append(
-                    {
-                        "name": athlete.name,
-                        "groups": groups_str,
-                        "completed_at": status.completed_at,
-                    }
+
+        coach_progress = {}
+        athlete_progress = {}
+
+        if is_coach:
+            for w in workouts:
+                total = (
+                    ExerciseStatus.query.join(Exercise)
+                    .filter(Exercise.workout_id == w.id)
+                    .count()
                 )
-            else:
-                not_completed_list.append({"name": athlete.name, "groups": groups_str})
-        # Sort completed by completed_at desc, not_completed by name
-        completed_list.sort(key=lambda x: x["completed_at"] or datetime.min, reverse=True)
-        not_completed_list.sort(key=lambda x: x["name"].lower())
+                completed = (
+                    ExerciseStatus.query.join(Exercise)
+                    .filter(
+                        Exercise.workout_id == w.id,
+                        ExerciseStatus.completed.is_(True),
+                    )
+                    .count()
+                )
+                coach_progress[w.id] = (completed, total)
+        else:
+            for w in workouts:
+                total_exercises = Exercise.query.filter_by(workout_id=w.id).count()
+                completed_exercises = (
+                    ExerciseStatus.query.join(Exercise)
+                    .filter(
+                        Exercise.workout_id == w.id,
+                        ExerciseStatus.athlete_id == current_user.id,
+                        ExerciseStatus.completed.is_(True),
+                    )
+                    .count()
+                )
+                athlete_progress[w.id] = (completed_exercises, total_exercises)
+
         return render_template(
-            "assignment_completions.html",
-            assignment=assignment,
+            "workouts_list.html",
             team=team,
-            completed_list=completed_list,
-            not_completed_list=not_completed_list,
-            is_coach=True,
+            workouts=workouts,
+            is_coach=is_coach,
+            coach_progress=coach_progress,
+            athlete_progress=athlete_progress,
         )
 
-    @app.route("/assignment/<int:assignment_id>/edit", methods=["GET", "POST"])
+    @app.route("/team/<int:team_id>/workout/create", methods=["GET", "POST"])
     @login_required
-    def edit_assignment(assignment_id):
-        """Coach only: edit assignment; on POST update and auto-announce."""
-        assignment = Assignment.query.get_or_404(assignment_id)
-        team = assignment.team
-        if not _coach_owns_team(team):
-            flash("You cannot edit this assignment.", "error")
+    def create_team_workout(team_id):
+        """Coach-only: create a workout with exercises for this team; generate ExerciseStatus for each athlete."""
+        team = Team.query.get_or_404(team_id)
+        if not isinstance(current_user, Coach) or not _user_can_access_team(team):
+            flash("You cannot create workouts for this team.", "error")
             return redirect(url_for("dashboard"))
+
         if request.method == "POST":
             title = request.form.get("title", "").strip()
             description = request.form.get("description", "").strip() or None
@@ -821,81 +751,458 @@ def create_app(config_class=Config):
                         hour=23, minute=59, second=0, microsecond=0
                     )
                 except ValueError:
-                    pass
+                    due_date = None
+
             assign_to = request.form.get("assign_to", "").strip()
             group_id = None
-            athlete_id = None
             if assign_to.startswith("g"):
                 try:
-                    group_id = int(assign_to[1:])
-                    g = Group.query.filter_by(id=group_id, team_id=team.id).first()
-                    if not g:
-                        group_id = None
-                except (ValueError, TypeError):
+                    raw_id = int(assign_to[1:])
+                    group = Group.query.filter_by(id=raw_id, team_id=team_id).first()
+                    if group:
+                        group_id = group.id
+                except (TypeError, ValueError):
                     group_id = None
-            elif assign_to.startswith("a"):
-                try:
-                    athlete_id = int(assign_to[1:])
-                    ath = Athlete.query.get(athlete_id)
-                    if not ath or not ath.teams.filter(Team.id == team.id).first():
-                        athlete_id = None
-                except (ValueError, TypeError):
-                    athlete_id = None
+
             if not title:
                 flash("Title is required.", "error")
                 return render_template(
-                    "edit_assignment.html",
-                    assignment=assignment,
+                    "workout_create.html",
                     team=team,
                     groups=team.groups.order_by(Group.name).all(),
-                    athletes=team.athletes.order_by(Athlete.name).all(),
                 )
-            assignment.title = title
-            assignment.description = description
-            assignment.due_date = due_date
-            assignment.group_id = group_id if not athlete_id else None
-            assignment.athlete_id = athlete_id
-            db.session.commit()
+
+            names = request.form.getlist("exercise_name")
+            sets_list = request.form.getlist("exercise_sets")
+            reps_list = request.form.getlist("exercise_reps")
+            notes_list = request.form.getlist("exercise_notes")
+
+            exercises_payload = []
+            for idx, name in enumerate(names):
+                name_clean = (name or "").strip()
+                if not name_clean:
+                    continue
+                try:
+                    sets_val = int(sets_list[idx]) if sets_list[idx] else None
+                except (ValueError, IndexError):
+                    sets_val = None
+                # Reps can be a single number or a comma-separated per-set plan like "10,8"
+                raw_reps = ""
+                try:
+                    raw_reps = (reps_list[idx] or "").strip()
+                except IndexError:
+                    raw_reps = ""
+                reps_val = None
+                set_plan = None
+                if raw_reps:
+                    if "," in raw_reps:
+                        parts = [p.strip() for p in raw_reps.split(",") if p.strip()]
+                        per_sets = []
+                        for i, part in enumerate(parts, start=1):
+                            try:
+                                r = int(part)
+                            except ValueError:
+                                continue
+                            per_sets.append({"set": i, "reps": r})
+                        if per_sets:
+                            set_plan = json.dumps(per_sets)
+                            reps_val = per_sets[0]["reps"]
+                            if sets_val is None:
+                                sets_val = len(per_sets)
+                    else:
+                        try:
+                            reps_val = int(raw_reps)
+                        except ValueError:
+                            reps_val = None
+                notes_val = (notes_list[idx] if idx < len(notes_list) else "").strip() or None
+                exercises_payload.append(
+                    {
+                        "name": name_clean,
+                        "sets": sets_val,
+                        "reps": reps_val,
+                        "notes": notes_val,
+                        "set_plan": set_plan,
+                    }
+                )
+
+            if not exercises_payload:
+                flash("Add at least one exercise.", "error")
+                return render_template(
+                    "workout_create.html",
+                    team=team,
+                    groups=team.groups.order_by(Group.name).all(),
+                )
+
+            workout = Workout(
+                title=title,
+                description=description,
+                due_date=due_date,
+                team_id=team_id,
+                group_id=group_id,
+                created_by=current_user.id,
+            )
+            db.session.add(workout)
+            db.session.flush()
+
+            for order_idx, row in enumerate(exercises_payload, start=1):
+                ex = Exercise(
+                    workout_id=workout.id,
+                    name=row["name"],
+                    sets=row["sets"],
+                    reps=row["reps"],
+                    notes=row["notes"],
+                    set_plan=row["set_plan"],
+                    order=order_idx,
+                )
+                db.session.add(ex)
+
+            db.session.flush()
+
+            # Create ExerciseStatus rows for all applicable athletes
+            if group_id:
+                target_group = Group.query.get(group_id)
+                target_athletes = target_group.athletes.all() if target_group else []
+            else:
+                target_athletes = team.athletes.all()
+
+            exercises = workout.exercises.all()
+            for athlete in target_athletes:
+                for ex in exercises:
+                    status = ExerciseStatus(
+                        exercise_id=ex.id,
+                        athlete_id=athlete.id,
+                        completed=False,
+                    )
+                    db.session.add(status)
+
             auto_ann = Announcement(
-                content=f"{current_user.name} updated assignment: {assignment.title}",
-                team_id=team.id,
+                content=f"{current_user.name} posted workout: {workout.title}",
+                team_id=team_id,
                 created_by=current_user.id,
                 is_auto=True,
             )
             db.session.add(auto_ann)
+
             db.session.commit()
-            flash("Assignment updated.", "success")
-            return redirect(url_for("team_dashboard", team_id=team.id))
+            flash("Workout created.", "success")
+            return redirect(url_for("team_dashboard", team_id=team_id))
+
         return render_template(
-            "edit_assignment.html",
-            assignment=assignment,
+            "workout_create.html",
             team=team,
             groups=team.groups.order_by(Group.name).all(),
-            athletes=team.athletes.order_by(Athlete.name).all(),
         )
 
-    @app.route("/assignment/<int:assignment_id>/delete", methods=["POST"])
+    @app.route("/team/<int:team_id>/workout/<int:workout_id>")
     @login_required
-    def delete_assignment(assignment_id):
-        """Coach only: delete assignment and its statuses; auto-announce removal."""
-        assignment = Assignment.query.get_or_404(assignment_id)
-        team = assignment.team
-        if not _coach_owns_team(team):
-            flash("You cannot delete this assignment.", "error")
+    def workout_detail(team_id, workout_id):
+        """Workout detail view for coaches and athletes."""
+        team = Team.query.get_or_404(team_id)
+        workout = Workout.query.filter_by(id=workout_id, team_id=team_id).first_or_404()
+        if not _user_can_access_team(team):
+            flash("You do not have access to this team.", "error")
             return redirect(url_for("dashboard"))
-        title = assignment.title
-        AssignmentStatus.query.filter_by(assignment_id=assignment_id).delete()
-        db.session.delete(assignment)
+
+        # Athlete-specific visibility: respect group targeting
+        if isinstance(current_user, Athlete):
+            if workout.group_id is not None:
+                athlete_group_ids = {
+                    g.id
+                    for g in current_user.groups.filter(Group.team_id == team_id).all()
+                }
+                if workout.group_id not in athlete_group_ids:
+                    flash("You do not have access to this workout.", "error")
+                    return redirect(url_for("dashboard"))
+
+        exercises = workout.exercises.order_by(Exercise.order).all()
+        is_coach = isinstance(current_user, Coach)
+
+        exercise_progress = {}
+        overall_completed = 0
+        overall_total = 0
+        athlete_statuses = {}
+        set_plans = {}
+
+        if is_coach:
+            for ex in exercises:
+                total = ex.statuses.count()
+                completed = ex.statuses.filter_by(completed=True).count()
+                exercise_progress[ex.id] = (completed, total)
+                overall_total += total
+                overall_completed += completed
+        else:
+            for ex in exercises:
+                status = ExerciseStatus.query.filter_by(
+                    exercise_id=ex.id, athlete_id=current_user.id
+                ).first()
+                athlete_statuses[ex.id] = status
+
+        # Parse any stored per-set rep plans for display
+        for ex in exercises:
+            if ex.set_plan:
+                try:
+                    plan = json.loads(ex.set_plan)
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    plan = None
+                if isinstance(plan, list):
+                    set_plans[ex.id] = plan
+
+        return render_template(
+            "workout_detail.html",
+            team=team,
+            workout=workout,
+            exercises=exercises,
+            is_coach=is_coach,
+            exercise_progress=exercise_progress,
+            overall_completed=overall_completed,
+            overall_total=overall_total,
+            athlete_statuses=athlete_statuses,
+            set_plans=set_plans,
+        )
+
+    @app.route("/exercise/<int:exercise_id>/complete", methods=["POST"])
+    @login_required
+    def exercise_toggle_complete(exercise_id):
+        """Athlete only: toggle completion state for a single exercise."""
+        if not isinstance(current_user, Athlete):
+            flash("Only athletes can complete workouts.", "error")
+            return redirect(url_for("dashboard"))
+
+        exercise = Exercise.query.get_or_404(exercise_id)
+        workout = exercise.workout
+        team = workout.team
+        if not _user_can_access_team(team):
+            flash("You do not have access to this team.", "error")
+            return redirect(url_for("dashboard"))
+
+        # Ensure athlete is in the targeted cohort
+        if workout.group_id is not None:
+            group_ids = {
+                g.id for g in current_user.groups.filter(Group.team_id == team.id).all()
+            }
+            if workout.group_id not in group_ids:
+                flash("You do not have access to this workout.", "error")
+                return redirect(url_for("dashboard"))
+
+        status = ExerciseStatus.query.filter_by(
+            exercise_id=exercise.id,
+            athlete_id=current_user.id,
+        ).first()
+        now = datetime.now()
+        if not status:
+            status = ExerciseStatus(
+                exercise_id=exercise.id,
+                athlete_id=current_user.id,
+                completed=True,
+                completed_at=now,
+            )
+            db.session.add(status)
+        else:
+            status.completed = not status.completed
+            status.completed_at = now if status.completed else None
+
+        db.session.commit()
+        return redirect(
+            url_for(
+                "workout_detail",
+                team_id=team.id,
+                workout_id=workout.id,
+            )
+        )
+
+    @app.route("/team/<int:team_id>/workout/<int:workout_id>/edit", methods=["GET", "POST"])
+    @login_required
+    def workout_edit(team_id, workout_id):
+        """Coach only: edit a workout and its exercises."""
+        team = Team.query.get_or_404(team_id)
+        workout = Workout.query.filter_by(id=workout_id, team_id=team_id).first_or_404()
+        if not _coach_owns_team(team):
+            flash("You cannot edit this workout.", "error")
+            return redirect(url_for("dashboard"))
+
+        if request.method == "POST":
+            title = request.form.get("title", "").strip()
+            description = request.form.get("description", "").strip() or None
+            due_date = None
+            due_str = request.form.get("due_date", "").strip()
+            if due_str:
+                try:
+                    due_date = datetime.strptime(due_str, "%Y-%m-%d").replace(
+                        hour=23, minute=59, second=0, microsecond=0
+                    )
+                except ValueError:
+                    due_date = None
+
+            assign_to = request.form.get("assign_to", "").strip()
+            group_id = None
+            if assign_to.startswith("g"):
+                try:
+                    raw_id = int(assign_to[1:])
+                    group = Group.query.filter_by(id=raw_id, team_id=team_id).first()
+                    if group:
+                        group_id = group.id
+                except (TypeError, ValueError):
+                    group_id = None
+
+            if not title:
+                flash("Title is required.", "error")
+                return render_template(
+                    "workout_edit.html",
+                    team=team,
+                    workout=workout,
+                    groups=team.groups.order_by(Group.name).all(),
+                    exercises=workout.exercises.order_by(Exercise.order).all(),
+                )
+
+            workout.title = title
+            workout.description = description
+            workout.due_date = due_date
+            workout.group_id = group_id
+
+            existing_exercises = {ex.id: ex for ex in workout.exercises.all()}
+
+            ids = request.form.getlist("exercise_id")
+            names = request.form.getlist("exercise_name")
+            sets_list = request.form.getlist("exercise_sets")
+            reps_list = request.form.getlist("exercise_reps")
+            notes_list = request.form.getlist("exercise_notes")
+
+            seen_ids = set()
+            order_counter = 1
+
+            for idx, name in enumerate(names):
+                name_clean = (name or "").strip()
+                if not name_clean:
+                    continue
+
+                raw_id = ids[idx] if idx < len(ids) else ""
+                try:
+                    sets_val = int(sets_list[idx]) if sets_list[idx] else None
+                except (ValueError, IndexError):
+                    sets_val = None
+                # Reps can be a single number or a comma-separated per-set plan like "10,8"
+                raw_reps = ""
+                try:
+                    raw_reps = (reps_list[idx] or "").strip()
+                except IndexError:
+                    raw_reps = ""
+                reps_val = None
+                set_plan = None
+                if raw_reps:
+                    if "," in raw_reps:
+                        parts = [p.strip() for p in raw_reps.split(",") if p.strip()]
+                        per_sets = []
+                        for i, part in enumerate(parts, start=1):
+                            try:
+                                r = int(part)
+                            except ValueError:
+                                continue
+                            per_sets.append({"set": i, "reps": r})
+                        if per_sets:
+                            set_plan = json.dumps(per_sets)
+                            reps_val = per_sets[0]["reps"]
+                            if sets_val is None:
+                                sets_val = len(per_sets)
+                    else:
+                        try:
+                            reps_val = int(raw_reps)
+                        except ValueError:
+                            reps_val = None
+                notes_val = (notes_list[idx] if idx < len(notes_list) else "").strip() or None
+
+                if raw_id:
+                    ex_id = int(raw_id)
+                    ex = existing_exercises.get(ex_id)
+                    if not ex:
+                        continue
+                    ex.name = name_clean
+                    ex.sets = sets_val
+                    ex.reps = reps_val
+                    ex.notes = notes_val
+                    ex.set_plan = set_plan
+                    ex.order = order_counter
+                    seen_ids.add(ex_id)
+                else:
+                    ex = Exercise(
+                        workout_id=workout.id,
+                        name=name_clean,
+                        sets=sets_val,
+                        reps=reps_val,
+                        notes=notes_val,
+                        set_plan=set_plan,
+                        order=order_counter,
+                    )
+                    db.session.add(ex)
+                order_counter += 1
+
+            # Delete exercises that were removed from the form
+            for ex_id, ex in existing_exercises.items():
+                if ex_id not in seen_ids:
+                    db.session.delete(ex)
+
+            auto_ann = Announcement(
+                content=f"{current_user.name} updated workout: {workout.title}",
+                team_id=team_id,
+                created_by=current_user.id,
+                is_auto=True,
+            )
+            db.session.add(auto_ann)
+
+            db.session.commit()
+            flash("Workout updated.", "success")
+            return redirect(
+                url_for("workout_detail", team_id=team_id, workout_id=workout.id)
+            )
+
+        ex_list = workout.exercises.order_by(Exercise.order).all()
+        exercise_reps_display = {}
+        for ex in ex_list:
+            if ex.set_plan:
+                try:
+                    plan = json.loads(ex.set_plan)
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    plan = None
+                if isinstance(plan, list):
+                    reps_str = ", ".join(
+                        str(item.get("reps"))
+                        for item in plan
+                        if isinstance(item, dict) and item.get("reps") is not None
+                    )
+                    if reps_str:
+                        exercise_reps_display[ex.id] = reps_str
+
+        return render_template(
+            "workout_edit.html",
+            team=team,
+            workout=workout,
+            groups=team.groups.order_by(Group.name).all(),
+            exercises=ex_list,
+            exercise_reps_display=exercise_reps_display,
+        )
+
+    @app.route("/team/<int:team_id>/workout/<int:workout_id>/delete", methods=["POST"])
+    @login_required
+    def workout_delete(team_id, workout_id):
+        """Coach only: delete a workout (and its exercises/statuses via cascade)."""
+        team = Team.query.get_or_404(team_id)
+        workout = Workout.query.filter_by(id=workout_id, team_id=team_id).first_or_404()
+        if not _coach_owns_team(team):
+            flash("You cannot delete this workout.", "error")
+            return redirect(url_for("dashboard"))
+
+        title = workout.title
+        db.session.delete(workout)
+
         auto_ann = Announcement(
-            content=f"{current_user.name} removed assignment: {title}",
-            team_id=team.id,
+            content=f"{current_user.name} removed workout: {title}",
+            team_id=team_id,
             created_by=current_user.id,
             is_auto=True,
         )
         db.session.add(auto_ann)
         db.session.commit()
-        flash("Assignment deleted.", "success")
-        return redirect(url_for("team_dashboard", team_id=team.id))
+        flash("Workout deleted.", "success")
+        return redirect(url_for("team_dashboard", team_id=team_id))
 
     @app.route("/announcement/<int:announcement_id>/edit", methods=["GET", "POST"])
     @login_required

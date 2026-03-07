@@ -107,3 +107,14 @@
 })();
 </script>
 {% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        document.body.classList.add('dashboard-home');
+    });
+})();
+</script>
+{% endblock %}

@@ -1,13 +1,29 @@
-{# home.html — Landing: app name, Log In and Sign Up only. #}
+{# home.html — Minimal landing: title, tagline, Log In / Sign Up only. #}
 {% extends "base.html" %}
 {% block title %}GamePlan{% endblock %}
+
 {% block content %}
-<div class="hero-block hero-saas">
-    <h1>GamePlan</h1>
-    <p class="hero-sub">A simple, modern way for coaches to organize teams, assignments, and communication.</p>
-    <div class="hero-buttons">
-        <a href="{{ url_for('login') }}" class="btn-hero">Log In</a>
-        <a href="{{ url_for('register') }}" class="btn-hero">Sign Up</a>
+<div class="landing-page">
+    <div class="landing-hero">
+        <div class="landing-hero-inner">
+            <h1 class="landing-title">GamePlan</h1>
+            <p class="landing-tagline">The modern playbook for coaches and athletes.</p>
+            <div class="landing-actions">
+                <a href="{{ url_for('login') }}" class="btn-landing btn-landing-secondary">Log In</a>
+                <a href="{{ url_for('register') }}" class="btn-landing btn-landing-primary">Sign Up</a>
+            </div>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        document.body.classList.add('home-landing');
+    });
+})();
+</script>
 {% endblock %}

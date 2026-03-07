@@ -1,6 +1,6 @@
 # GamePlan
 
-GamePlan is a coach–athlete management web app built with Flask. Coaches create teams and share invite codes; athletes join teams and view assignments. UI uses Bootstrap 5, Bootstrap Icons, and custom GamePlan branding.
+GamePlan is a coach–athlete management web app built with Flask. Coaches create teams and share invite codes; athletes join teams and view workouts. UI uses Bootstrap 5, Bootstrap Icons, and custom GamePlan branding.
 
 ## Stack
 
@@ -15,7 +15,7 @@ GamePlan is a coach–athlete management web app built with Flask. Coaches creat
 - **`config.py`** — configuration (secret key, database URI, etc.)
 - **`extensions.py`** — shared `db` and `login_manager` instances (used by `app.py` and `models.py`)
 - **`models.py`** — SQLAlchemy models: `Coach`, `Athlete`, `Team`
-- **`templates/`** — Jinja2 templates: `base.html`, `home.html`, `login.html`, `register.html`, `dashboard.html`, `team_dashboard.html`, `team_settings.html`, `team_roster.html`, assignment/announcement/group forms
+- **`templates/`** — Jinja2 templates: `base.html`, `home.html`, `login.html`, `register.html`, `dashboard.html`, `team_dashboard.html`, `team_settings.html`, `team_roster.html`, workout/announcement/group forms
 - **`static/`** — static assets (e.g. `style.css`)
 - **`tests/`** — tests: `test_models.py`, `test_app.py`
 
@@ -62,7 +62,12 @@ Tests are stubs for now; implement them as you add features (e.g. login, DB oper
 
 ## Team dashboard UI
 
-- **Calendar**: The team dashboard calendar now starts weeks on Sunday, stretches rows to fill the available height, and shows a tiny preview of the first assignment title inside each day cell so coaches can quickly scan what’s coming.
-- **Sidebar & roster**: The team sidebar focuses on simple section labels (Team Hub, Roster, Groups, Team Settings), while the roster page itself shows a player count under the `Roster` heading (for example, `5 players`).
+- **Calendar**: The team dashboard calendar starts weeks on Sunday, stretches rows to fill the available height, and shows a tiny preview of the first workout title inside each day cell so coaches can quickly scan what’s coming. Dots under each day indicate workout due dates and announcements.
+- **Sidebar & roster**: The team sidebar focuses on simple section labels (Team Hub, Workouts, Roster, Groups, Team Settings), while the roster page itself shows a player count under the `Roster` heading (for example, `5 players`).
 - **Top bar**: When viewing a team, the top bar shows a breadcrumb-style context like `GamePlan › Football`, with the team name slightly larger and bolder for orientation.
-- **Right column**: The announcements/assignments column is slightly wider, announcement timestamps use friendly “time ago” text like `Just now` or `2 hours ago`, the plus icons have hover tooltips, and empty states include subtle icons so they feel intentional rather than broken.
+- **Right column**: The right column is split into Announcements and Workouts. Announcement timestamps use friendly “time ago” text like `Just now` or `2 hours ago`, the plus icons have hover tooltips, and empty states include subtle icons so they feel intentional rather than broken. Coaches see per-workout completion progress; athletes see their own exercise completion status.
+
+## Workouts: sets and reps
+
+- **Simple case**: Each exercise row lets you enter a number of sets and a single reps value (for example, `3` sets and `10` reps).
+- **Different reps per set**: If a coach wants different reps on each set, they can type a comma-separated list into the Reps box (for example, `12,10` for 2 sets, or `12,10,8` for 3 sets). The app stores this plan with the workout, and the workout detail screen shows the breakdown as “Set 1: 12 reps · Set 2: 10 reps · Set 3: 8 reps”.
