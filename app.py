@@ -22,6 +22,7 @@ from models import (  # noqa: E402, F401
     Assignment,
     Announcement,
     AssignmentStatus,
+    Group,
 )
 
 
@@ -154,15 +155,29 @@ def create_app(config_class=Config):
                 return redirect(url_for("coach_dashboard"))
             return redirect(url_for("athlete_dashboard"))
         athletes = team.athletes.all()
+        groups = team.groups.order_by(Group.name).all()
         announcements = (
             team.announcements.order_by(Announcement.created_at.desc()).limit(50).all()
         )
-        assignments = (
+        all_assignments = (
             Assignment.query.filter_by(team_id=team_id)
             .order_by(Assignment.created_at.desc())
             .all()
         )
         is_coach = isinstance(current_user, Coach) and team.coach_id == current_user.id
+
+        # Athlete: only see team-wide assignments + assignments for groups they're in
+        if is_coach:
+            assignments = all_assignments
+        else:
+            athlete_group_ids = {
+                g.id for g in current_user.groups.filter(Group.team_id == team_id).all()
+            }
+            assignments = [
+                a
+                for a in all_assignments
+                if a.group_id is None or a.group_id in athlete_group_ids
+            ]
 
         # Coach: completion counts per assignment (completed, total)
         # Athlete: their AssignmentStatus per assignment
@@ -201,6 +216,7 @@ def create_app(config_class=Config):
             "team_dashboard.html",
             team=team,
             athletes=athletes,
+            groups=groups,
             announcements=announcements,
             assignments=assignments,
             is_coach=is_coach,
@@ -212,8 +228,8 @@ def create_app(config_class=Config):
             first_weekday=first_weekday,
             cal_today=today.day,
             assignment_due_days=assignment_due_days,
-        cal_month_name=cal_module.month_name[cal_month],
-    )
+            cal_month_name=cal_module.month_name[cal_month],
+        )
 
     @app.route("/team/<int:team_id>/announce", methods=["POST"])
     @login_required
@@ -236,6 +252,51 @@ def create_app(config_class=Config):
         db.session.commit()
         flash("Announcement posted.", "success")
         return redirect(url_for("team_dashboard", team_id=team_id))
+
+    @app.route("/team/<int:team_id>/group/create", methods=["GET", "POST"])
+    @login_required
+    def create_group(team_id):
+        """Coach only: create a new group for the team."""
+        team = Team.query.get_or_404(team_id)
+        if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
+            flash("You cannot create groups for this team.", "error")
+            return redirect(url_for("coach_dashboard"))
+        if request.method == "POST":
+            name = request.form.get("name", "").strip()
+            if not name:
+                flash("Group name is required.", "error")
+                return render_template("group_create.html", team=team)
+            group = Group(name=name, team_id=team_id)
+            db.session.add(group)
+            db.session.commit()
+            flash("Group created.", "success")
+            return redirect(url_for("team_dashboard", team_id=team_id))
+        return render_template("group_create.html", team=team)
+
+    @app.route("/team/<int:team_id>/group/<int:group_id>/manage", methods=["GET", "POST"])
+    @login_required
+    def manage_group(team_id, group_id):
+        """Coach only: update which athletes are in the group."""
+        team = Team.query.get_or_404(team_id)
+        group = Group.query.filter_by(id=group_id, team_id=team_id).first_or_404()
+        if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
+            flash("You cannot manage this group.", "error")
+            return redirect(url_for("coach_dashboard"))
+        athletes = team.athletes.all()
+        if request.method == "POST":
+            selected_ids = set(request.form.getlist("athlete_id"))
+            group.athletes = [a for a in athletes if str(a.id) in selected_ids]
+            db.session.commit()
+            flash("Group updated.", "success")
+            return redirect(url_for("team_dashboard", team_id=team_id))
+        group_member_ids = {a.id for a in group.athletes.all()}
+        return render_template(
+            "group_manage.html",
+            team=team,
+            group=group,
+            athletes=athletes,
+            group_member_ids=group_member_ids,
+        )
 
     @app.route("/coach/dashboard")
     @login_required
@@ -366,19 +427,36 @@ def create_app(config_class=Config):
                         due_date = datetime.strptime(due_str, "%Y-%m-%d")
                     except ValueError:
                         pass
+            group_id = request.form.get("group_id", "").strip() or None
+            if group_id:
+                try:
+                    group_id = int(group_id)
+                    g = Group.query.filter_by(id=group_id, team_id=team_id).first()
+                    if not g:
+                        group_id = None
+                except (ValueError, TypeError):
+                    group_id = None
             if not title:
                 flash("Title is required.", "error")
-                return render_template("create_assignment.html", team=team)
+                return render_template(
+                    "create_assignment.html", team=team, groups=team.groups.order_by(Group.name).all()
+                )
             assignment = Assignment(
                 title=title,
                 description=description,
                 due_date=due_date,
                 team_id=team_id,
+                group_id=group_id,
                 created_by=current_user.id,
             )
             db.session.add(assignment)
             db.session.flush()
-            for athlete in team.athletes.all():
+            if group_id:
+                group = Group.query.get(group_id)
+                target_athletes = group.athletes.all()
+            else:
+                target_athletes = team.athletes.all()
+            for athlete in target_athletes:
                 status = AssignmentStatus(
                     assignment_id=assignment.id,
                     athlete_id=athlete.id,
@@ -388,7 +466,11 @@ def create_app(config_class=Config):
             db.session.commit()
             flash("Assignment created.", "success")
             return redirect(url_for("team_dashboard", team_id=team_id))
-        return render_template("create_assignment.html", team=team)
+        return render_template(
+            "create_assignment.html",
+            team=team,
+            groups=team.groups.order_by(Group.name).all(),
+        )
 
     @app.route("/assignment/<int:assignment_id>/complete", methods=["POST"])
     @login_required

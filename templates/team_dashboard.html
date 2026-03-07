@@ -70,6 +70,29 @@
             {% endif %}
         </section>
 
+        {% if is_coach %}
+        <section class="section groups-section">
+            <h2 class="section-heading">Groups</h2>
+            <p class="section-action">
+                <a href="{{ url_for('create_group', team_id=team.id) }}" class="btn-primary btn-primary-inline">Create Group</a>
+            </p>
+            {% if groups %}
+            <div class="team-grid">
+                {% for g in groups %}
+                <a href="{{ url_for('manage_group', team_id=team.id, group_id=g.id) }}" class="team-card-link">
+                    <div class="team-card">
+                        <p class="team-name">{{ g.name }}</p>
+                        <p class="team-meta">{{ g.athletes.count() }} member{{ 's' if g.athletes.count() != 1 else '' }}</p>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-state empty-state-inline">No groups yet. Create position groups (e.g. Quarterbacks, O-Line) and assign athletes.</p>
+            {% endif %}
+        </section>
+        {% endif %}
+
         <section class="section assignments-section">
             <h2 class="section-heading">{% if is_coach %}Assignments{% else %}My Assignments{% endif %}</h2>
             {% if is_coach %}

@@ -14,6 +14,15 @@
             <textarea id="description" name="description"></textarea>
         </div>
         <div class="form-group">
+            <label for="assign_to">Assign to</label>
+            <select id="assign_to" name="group_id">
+                <option value="">Entire Team</option>
+                {% for g in groups %}
+                <option value="{{ g.id }}">{{ g.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
             <label for="due_date">Due date (optional)</label>
             <input type="datetime-local" id="due_date" name="due_date">
         </div>

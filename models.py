@@ -23,6 +23,13 @@ athlete_teams = db.Table(
     db.Column("team_id", db.Integer, db.ForeignKey("teams.id"), primary_key=True),
 )
 
+# Many-to-many: athletes can be in multiple groups (position groups)
+group_members = db.Table(
+    "group_members",
+    db.Column("group_id", db.Integer, db.ForeignKey("groups.id"), primary_key=True),
+    db.Column("athlete_id", db.Integer, db.ForeignKey("athletes.id"), primary_key=True),
+)
+
 
 class Coach(UserMixin, db.Model):
     """Coach user: can log in, own teams, and manage athletes."""
@@ -86,6 +93,14 @@ class Team(db.Model):
         foreign_keys="Announcement.team_id",
     )
 
+    # One team has many groups (position groups)
+    groups = db.relationship(
+        "Group",
+        backref="team",
+        lazy="dynamic",
+        foreign_keys="Group.team_id",
+    )
+
     @classmethod
     def generate_invite_code(cls) -> str:
         """Generate a random 8-character invite code that is unique in the database."""
@@ -94,6 +109,24 @@ class Team(db.Model):
             if not cls.query.filter_by(invite_code=code).first():
                 return code
         raise RuntimeError("Could not generate unique invite code")
+
+
+class Group(db.Model):
+    """Position group within a team (e.g. Quarterbacks, O-Line)."""
+
+    __tablename__ = "groups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    athletes = db.relationship(
+        "Athlete",
+        secondary=group_members,
+        backref=db.backref("groups", lazy="dynamic"),
+        lazy="dynamic",
+    )
 
 
 class Announcement(db.Model):
@@ -109,7 +142,7 @@ class Announcement(db.Model):
 
 
 class Assignment(db.Model):
-    """Assignment: created by a coach for a team."""
+    """Assignment: created by a coach for a team (or for a specific group)."""
 
     __tablename__ = "assignments"
 
@@ -118,8 +151,11 @@ class Assignment(db.Model):
     description = db.Column(db.Text, nullable=True)
     due_date = db.Column(db.DateTime, nullable=True)
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    group = db.relationship("Group", backref="assignments", foreign_keys="Assignment.group_id")
 
     statuses = db.relationship(
         "AssignmentStatus",

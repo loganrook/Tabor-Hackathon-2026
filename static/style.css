@@ -781,6 +781,36 @@ body {
     border-top: 1px solid #e2e8f0;
 }
 
+/* ── Group manage (checkboxes) ── */
+.group-manage-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.group-manage-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.group-manage-item:last-child {
+    border-bottom: none;
+}
+
+.group-manage-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9375rem;
+    margin: 0;
+}
+
+.group-manage-label input[type="checkbox"] {
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
 /* ── Home hero ── */
 .hero-block {
     text-align: center;

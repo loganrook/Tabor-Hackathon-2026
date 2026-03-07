@@ -1,0 +1,32 @@
+{# group_manage.html — Coach: manage which athletes are in the group (checkboxes). #}
+{% extends "base.html" %}
+{% block title %}{{ group.name }} — {{ team.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ group.name }}</h1>
+    <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="back-link">← Back to team</a>
+</div>
+
+<p class="team-meta" style="margin-bottom: 1.5rem;">Select athletes who belong to this group.</p>
+
+<form action="{{ url_for('manage_group', team_id=team.id, group_id=group.id) }}" method="post">
+    {% if athletes %}
+    <ul class="roster-list group-manage-list">
+        {% for a in athletes %}
+        <li class="group-manage-item">
+            <label class="group-manage-label">
+                <input type="checkbox" name="athlete_id" value="{{ a.id }}" {{ 'checked' if a.id in group_member_ids else '' }}>
+                <span>{{ a.name }}</span>
+                <span class="team-meta"> — {{ a.email }}</span>
+            </label>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty-state empty-state-inline">No athletes on this team yet. Share the invite code so they can join.</p>
+    {% endif %}
+    {% if athletes %}
+    <button type="submit" class="btn-primary btn-primary-inline" style="margin-top: 1rem;">Save group</button>
+    {% endif %}
+</form>
+{% endblock %}

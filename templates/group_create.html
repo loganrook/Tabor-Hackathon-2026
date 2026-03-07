@@ -1,0 +1,16 @@
+{# group_create.html — Coach: create a new group for the team. #}
+{% extends "base.html" %}
+{% block title %}Create group — {{ team.name }}{% endblock %}
+{% block content %}
+<div class="auth-card">
+    <h1>Create group</h1>
+    <form action="{{ url_for('create_group', team_id=team.id) }}" method="post">
+        <div class="form-group">
+            <label for="name">Group name</label>
+            <input type="text" id="name" name="name" placeholder="e.g. Quarterbacks, O-Line" required>
+        </div>
+        <button type="submit" class="btn-primary">Create group</button>
+    </form>
+    <p class="auth-footer"><a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="back-link">← Back to team</a></p>
+</div>
+{% endblock %}
