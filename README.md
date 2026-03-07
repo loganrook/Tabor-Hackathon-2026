@@ -15,7 +15,7 @@ A coach–athlete management web app built with Flask for a hackathon. Coaches c
 - **`config.py`** — configuration (secret key, database URI, etc.)
 - **`extensions.py`** — shared `db` and `login_manager` instances (used by `app.py` and `models.py`)
 - **`models.py`** — SQLAlchemy models: `Coach`, `Athlete`, `Team`
-- **`templates/`** — Jinja2 templates: `base.html`, `home.html`, `login.html`, `dashboard.html`, `roster.html`
+- **`templates/`** — Jinja2 templates: `base.html`, `home.html`, `login.html`, `register.html`, `dashboard.html`, `team_dashboard.html`, `team_settings.html`, `team_roster.html`, assignment/announcement/group forms
 - **`static/`** — static assets (e.g. `style.css`)
 - **`tests/`** — tests: `test_models.py`, `test_app.py`
 

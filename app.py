@@ -242,6 +242,46 @@ def create_app(config_class=Config):
             return redirect(url_for("dashboard"))
         return render_template("join_team.html")
 
+    @app.route("/team/<int:team_id>/settings", methods=["GET", "POST"])
+    @login_required
+    def team_settings(team_id):
+        """Coach only: invite code, edit team name, manage groups, delete team."""
+        team = Team.query.get_or_404(team_id)
+        if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
+            flash("You do not have access to team settings.", "error")
+            return redirect(url_for("dashboard"))
+        if request.method == "POST":
+            action = request.form.get("action")
+            if action == "update_name":
+                name = request.form.get("name", "").strip()
+                if name:
+                    team.name = name
+                    db.session.commit()
+                    flash("Team name updated.", "success")
+                return redirect(url_for("team_settings", team_id=team_id))
+            if action == "delete_team":
+                # Delete in order: AssignmentStatus -> Assignment -> Announcement -> Groups -> Team
+                for assignment in team.assignments.all():
+                    for status in assignment.statuses.all():
+                        db.session.delete(status)
+                    db.session.delete(assignment)
+                for ann in team.announcements.all():
+                    db.session.delete(ann)
+                for group in list(team.groups.all()):
+                    group.athletes = []
+                    db.session.delete(group)
+                team.athletes = []
+                db.session.delete(team)
+                db.session.commit()
+                flash("Team deleted.", "success")
+                return redirect(url_for("dashboard"))
+        groups = team.groups.order_by(Group.name).all()
+        return render_template(
+            "team_settings.html",
+            team=team,
+            groups=groups,
+        )
+
     @app.route("/team/<int:team_id>")
     @login_required
     def team_dashboard(team_id):
@@ -296,6 +336,15 @@ def create_app(config_class=Config):
                 )
                 assignment_status_by_athlete[a.id] = status
 
+        # Sidebar groups: coach sees all, athlete sees only groups they belong to
+        if is_coach:
+            sidebar_groups = groups
+        else:
+            athlete_group_ids = {
+                g.id for g in current_user.groups.filter(Group.team_id == team_id).all()
+            }
+            sidebar_groups = [g for g in groups if g.id in athlete_group_ids]
+
         # Calendar: current month, days with due dates
         today = date.today()
         cal_year = today.year
@@ -317,6 +366,7 @@ def create_app(config_class=Config):
             team=team,
             athletes=athletes,
             groups=groups,
+            sidebar_groups=sidebar_groups,
             announcements=announcements,
             assignments=assignments,
             is_coach=is_coach,

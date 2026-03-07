@@ -1,0 +1,52 @@
+{# team_settings.html — Coach only: invite code, edit name, manage groups, delete team. #}
+{% extends "base.html" %}
+{% block title %}Team Settings — {{ team.name }}{% endblock %}
+{% block content %}
+<div class="team-standalone-page">
+    <div class="team-standalone-inner">
+        <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="back-link">← Back to team</a>
+        <h1>Team Settings</h1>
+
+        <section class="settings-section">
+            <h2 class="settings-heading">Invite code</h2>
+            <p class="invite-code-display">{{ team.invite_code }}</p>
+            <p class="text-muted">Share this code with athletes so they can join the team.</p>
+        </section>
+
+        <section class="settings-section">
+            <h2 class="settings-heading">Team name</h2>
+            <form method="post" class="settings-form">
+                <input type="hidden" name="action" value="update_name">
+                <div class="form-group">
+                    <label for="team_name">Name</label>
+                    <input type="text" id="team_name" name="name" value="{{ team.name }}" required>
+                </div>
+                <button type="submit" class="btn-primary">Save name</button>
+            </form>
+        </section>
+
+        <section class="settings-section">
+            <h2 class="settings-heading">Manage groups</h2>
+            <p><a href="{{ url_for('create_group', team_id=team.id) }}" class="btn-secondary btn-small">Create group</a></p>
+            {% if groups %}
+            <ul class="settings-list">
+                {% for g in groups %}
+                <li><a href="{{ url_for('manage_group', team_id=team.id, group_id=g.id) }}">{{ g.name }}</a> ({{ g.athletes.count() }} member{{ 's' if g.athletes.count() != 1 else '' }})</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted">No groups yet. Create position groups and assign athletes.</p>
+            {% endif %}
+        </section>
+
+        <section class="settings-section danger-zone">
+            <h2 class="settings-heading">Danger zone</h2>
+            <p>Deleting the team will remove all assignments, announcements, and groups. This cannot be undone.</p>
+            <form method="post" class="danger-form" onsubmit="return confirm('Are you sure you want to delete this team? This cannot be undone.');">
+                <input type="hidden" name="action" value="delete_team">
+                <button type="submit" class="btn-danger">Delete team</button>
+            </form>
+        </section>
+    </div>
+</div>
+{% endblock %}

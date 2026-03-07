@@ -1,12 +1,11 @@
-{# home.html — Landing page. App name, one-line description, Sign In and Sign Up. #}
+{# home.html — Landing: app name, Log In and Sign Up only. #}
 {% extends "base.html" %}
 {% block title %}CoachHub{% endblock %}
 {% block content %}
 <div class="hero-block hero-saas">
     <h1>CoachHub</h1>
-    <p class="hero-sub">Connect with your coach and team — create teams, assign work, and track progress in one place.</p>
     <div class="hero-buttons">
-        <a href="{{ url_for('login') }}" class="btn-hero">Sign In</a>
+        <a href="{{ url_for('login') }}" class="btn-hero">Log In</a>
         <a href="{{ url_for('register') }}" class="btn-hero">Sign Up</a>
     </div>
 </div>

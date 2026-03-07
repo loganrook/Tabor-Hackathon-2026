@@ -10,6 +10,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-banner {{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    {% if request.endpoint not in ['team_dashboard', 'team_settings'] %}
     <nav class="nav-minimal">
         <a class="nav-logo" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('index') }}">CoachHub</a>
         <div class="nav-right">
@@ -17,23 +25,19 @@
             <span class="nav-user-name">{{ current_user.name }}</span>
             <a href="{{ url_for('logout') }}">Log out</a>
             {% else %}
-            <a href="{{ url_for('login') }}">Sign In</a>
+            <a href="{{ url_for('login') }}">Log In</a>
             <a href="{{ url_for('register') }}">Sign Up</a>
             {% endif %}
         </div>
     </nav>
     <div class="app-container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-banner {{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
         <main class="content">
+    {% endif %}
             {% block content %}{% endblock %}
+    {% if request.endpoint not in ['team_dashboard', 'team_settings'] %}
         </main>
     </div>
+    {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     {% block scripts %}{% endblock %}

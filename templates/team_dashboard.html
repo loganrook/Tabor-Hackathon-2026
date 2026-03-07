@@ -1,174 +1,178 @@
-{# team_dashboard.html — Two-column: calendar (left), announcements + assignments (right). Team Settings at bottom. #}
+{# team_dashboard.html — Top bar, dark sidebar (Roster, Groups, Settings), main: calendar + announcements + assignments. #}
 {% extends "base.html" %}
 {% block title %}{{ team.name }} — CoachHub{% endblock %}
 {% block content %}
-<div class="page-header">
-    <h1>{{ team.name }}</h1>
-    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to my teams</a>
-</div>
+<div class="team-dash-wrapper">
+    <header class="team-topbar">
+        <button type="button" class="team-topbar-menu" id="topbar-menu" aria-label="Menu"><i class="bi bi-list"></i></button>
+        <h1 class="team-topbar-name">{{ team.name }}</h1>
+        <div class="team-topbar-right">
+            <span class="team-profile-circle" title="{{ current_user.name }}">{{ current_user.name[0]|upper if current_user.name else '?' }}</span>
+            <a href="{{ url_for('logout') }}" class="team-topbar-logout">Log out</a>
+        </div>
+    </header>
 
-<div class="team-dash-layout">
-    <div class="team-dash-left">
-        <section class="calendar-section" id="calendar-section">
-            <div class="calendar-header">
-                <button type="button" class="calendar-nav" id="calendar-prev" aria-label="Previous month">‹</button>
-                <h2 class="section-heading calendar-month-title" id="calendar-month-title">{{ cal_month_name }} {{ cal_year }}</h2>
-                <button type="button" class="calendar-nav" id="calendar-next" aria-label="Next month">›</button>
+    <aside class="team-sidebar" id="team-sidebar">
+        <button type="button" class="team-sidebar-toggle" id="sidebar-toggle" aria-label="Toggle menu"><i class="bi bi-list"></i></button>
+        <nav class="team-sidebar-nav">
+            <div class="team-sidebar-section">
+                <button type="button" class="team-sidebar-expand" id="roster-toggle" aria-expanded="false">Roster</button>
+                <ul class="team-sidebar-roster" id="roster-list">
+                    {% for a in athletes %}
+                    <li>{{ a.name }}</li>
+                    {% endfor %}
+                    {% if not athletes %}<li class="text-muted">No athletes yet</li>{% endif %}
+                </ul>
             </div>
-            <div class="calendar-view" id="calendar-view">
-                <div class="calendar-grid">
-                    <div class="calendar-weekdays">
-                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            <div class="team-sidebar-section">
+                <span class="team-sidebar-label">Groups</span>
+                <ul class="team-sidebar-groups">
+                    <li><a href="#" class="team-filter-link active" data-group-id="">All</a></li>
+                    {% for g in sidebar_groups %}
+                    <li><a href="#" class="team-filter-link" data-group-id="{{ g.id }}">{{ g.name }}</a></li>
+                    {% endfor %}
+                    {% if not sidebar_groups %}<li class="text-muted">No groups</li>{% endif %}
+                </ul>
+            </div>
+            {% if is_coach %}
+            <div class="team-sidebar-footer">
+                <a href="{{ url_for('team_settings', team_id=team.id) }}" class="team-sidebar-settings" title="Team settings"><i class="bi bi-gear"></i></a>
+            </div>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <main class="team-dash-main">
+        <div class="team-dash-layout">
+            <div class="team-dash-left">
+                <section class="calendar-section" id="calendar-section">
+                    <div class="calendar-header">
+                        <button type="button" class="calendar-nav" id="calendar-prev" aria-label="Previous month">‹</button>
+                        <h2 class="section-heading calendar-month-title" id="calendar-month-title">{{ cal_month_name }} {{ cal_year }}</h2>
+                        <button type="button" class="calendar-nav" id="calendar-next" aria-label="Next month">›</button>
                     </div>
-                    <div class="calendar-days" id="calendar-days">
-                        {% for i in range(first_weekday) %}
-                        <div class="calendar-day calendar-day-empty"></div>
-                        {% endfor %}
-                        {% for day in range(1, days_in_month + 1) %}
-                        <div class="calendar-day {{ 'calendar-day-today' if day == cal_today else '' }} {{ 'calendar-day-has-activity' if day in assignment_due_days else '' }}" data-year="{{ cal_year }}" data-month="{{ cal_month }}" data-day="{{ day }}">
-                            <span class="calendar-day-num">{{ day }}</span>
-                            {% if day in assignment_due_days %}
-                            <span class="calendar-dot"></span>
+                    <div class="calendar-view" id="calendar-view">
+                        <div class="calendar-grid">
+                            <div class="calendar-weekdays">
+                                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                            </div>
+                            <div class="calendar-days" id="calendar-days">
+                                {% for i in range(first_weekday) %}
+                                <div class="calendar-day calendar-day-empty"></div>
+                                {% endfor %}
+                                {% for day in range(1, days_in_month + 1) %}
+                                <div class="calendar-day {{ 'calendar-day-today' if day == cal_today else '' }} {{ 'calendar-day-has-activity' if day in assignment_due_days else '' }}" data-year="{{ cal_year }}" data-month="{{ cal_month }}" data-day="{{ day }}">
+                                    <span class="calendar-day-num">{{ day }}</span>
+                                    {% if day in assignment_due_days %}
+                                    <span class="calendar-dot"></span>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="calendar-day-view hidden" id="calendar-day-view">
+                        <h2 class="section-heading calendar-day-view-title" id="calendar-day-view-title"></h2>
+                        <button type="button" class="btn-secondary back-to-calendar" id="back-to-calendar">← Back to calendar</button>
+                        <div class="calendar-day-assignments" id="calendar-day-assignments"></div>
+                        <div class="calendar-day-announcements" id="calendar-day-announcements"></div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="team-dash-right">
+                <section class="section announcements-section">
+                    <h2 class="section-heading">Announcements</h2>
+                    {% if is_coach %}
+                    <form action="{{ url_for('team_announce', team_id=team.id) }}" method="post" class="announce-form">
+                        <div class="form-group">
+                            <label for="announce_content">Post an announcement</label>
+                            <textarea id="announce_content" name="content" rows="2" placeholder="Write something..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary btn-primary-inline">Post</button>
+                    </form>
+                    {% endif %}
+                    {% if announcements %}
+                    <div class="announcement-list">
+                        {% for ann in announcements %}
+                        <div class="announcement-card {{ 'announcement-card-auto' if ann.is_auto else '' }}">
+                            <p class="announcement-content">{{ ann.content }}</p>
+                            <p class="announcement-meta">{{ ann.created_at|fmt_datetime }}</p>
+                            {% if is_coach %}
+                            <div class="announcement-actions">
+                                <a href="{{ url_for('edit_announcement', announcement_id=ann.id) }}" class="btn-small btn-secondary">Edit</a>
+                                <form action="{{ url_for('delete_announcement', announcement_id=ann.id) }}" method="post" class="announcement-delete-form" onsubmit="return confirm('Delete this announcement?');">
+                                    <button type="submit" class="btn-small btn-danger-outline">Delete</button>
+                                </form>
+                            </div>
                             {% endif %}
                         </div>
                         {% endfor %}
                     </div>
-                </div>
-            </div>
-            <div class="calendar-day-view hidden" id="calendar-day-view">
-                <h2 class="section-heading calendar-day-view-title" id="calendar-day-view-title"></h2>
-                <button type="button" class="btn-secondary back-to-calendar" id="back-to-calendar">← Back to calendar</button>
-                <div class="calendar-day-assignments" id="calendar-day-assignments"></div>
-                <div class="calendar-day-announcements" id="calendar-day-announcements"></div>
-            </div>
-        </section>
-    </div>
-
-    <div class="team-dash-right">
-        <section class="section announcements-section">
-            <h2 class="section-heading">Announcements</h2>
-            {% if is_coach %}
-            <form action="{{ url_for('team_announce', team_id=team.id) }}" method="post" class="announce-form">
-                <div class="form-group">
-                    <label for="announce_content">Post an announcement</label>
-                    <textarea id="announce_content" name="content" rows="2" placeholder="Write something..."></textarea>
-                </div>
-                <button type="submit" class="btn-primary btn-primary-inline">Post</button>
-            </form>
-            {% endif %}
-            {% if announcements %}
-            <div class="announcement-list">
-                {% for ann in announcements %}
-                <div class="announcement-card {{ 'announcement-card-auto' if ann.is_auto else '' }}">
-                    <p class="announcement-content">{{ ann.content }}</p>
-                    <p class="announcement-meta">{{ ann.created_at|fmt_datetime }}</p>
-                    {% if is_coach %}
-                    <div class="announcement-actions">
-                        <a href="{{ url_for('edit_announcement', announcement_id=ann.id) }}" class="btn-small btn-secondary">Edit</a>
-                        <form action="{{ url_for('delete_announcement', announcement_id=ann.id) }}" method="post" class="announcement-delete-form" onsubmit="return confirm('Delete this announcement?');">
-                            <button type="submit" class="btn-small btn-danger-outline">Delete</button>
-                        </form>
-                    </div>
+                    {% else %}
+                    <p class="empty-state empty-state-inline">No announcements yet.</p>
                     {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="empty-state empty-state-inline">No announcements yet.</p>
-            {% endif %}
-        </section>
+                </section>
 
-        {% if is_coach %}
-        <section class="section groups-section">
-            <h2 class="section-heading">Groups</h2>
-            <p class="section-action">
-                <a href="{{ url_for('create_group', team_id=team.id) }}" class="btn-primary btn-primary-inline">Create Group</a>
-            </p>
-            {% if groups %}
-            <div class="team-grid">
-                {% for g in groups %}
-                <a href="{{ url_for('manage_group', team_id=team.id, group_id=g.id) }}" class="team-card-link">
-                    <div class="team-card">
-                        <p class="team-name">{{ g.name }}</p>
-                        <p class="team-meta">{{ g.athletes.count() }} member{{ 's' if g.athletes.count() != 1 else '' }}</p>
-                    </div>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="empty-state empty-state-inline">No groups yet. Create position groups (e.g. Quarterbacks, O-Line) and assign athletes.</p>
-            {% endif %}
-        </section>
-        {% endif %}
-
-        <section class="section assignments-section">
-            <h2 class="section-heading">{% if is_coach %}Assignments{% else %}My Assignments{% endif %}</h2>
-            {% if is_coach %}
-            <p class="section-action">
-                <a href="{{ url_for('create_team_assignment', team_id=team.id) }}" class="btn-primary btn-primary-inline">Add Assignment</a>
-            </p>
-            {% endif %}
-            {% if assignments %}
-            <div class="assignment-list">
-                {% for a in assignments %}
-                <div class="assignment-card {{ 'assignment-card-completed' if not is_coach and assignment_status_by_athlete.get(a.id) and assignment_status_by_athlete[a.id].completed else '' }}">
-                    <p class="assignment-title">{{ a.title }}</p>
-                    <p class="assignment-badges">
-                        {% if a.athlete_id and a.athlete %}
-                        <span class="assignment-badge assignment-badge-individual">{{ a.athlete.name }}</span>
-                        {% elif a.group_id and a.group %}
-                        <span class="assignment-badge assignment-badge-group">{{ a.group.name }}</span>
-                        {% else %}
-                        <span class="assignment-badge assignment-badge-team">Entire Team</span>
-                        {% endif %}
+                <section class="section assignments-section">
+                    <h2 class="section-heading">{% if is_coach %}Assignments{% else %}My Assignments{% endif %}</h2>
+                    {% if is_coach %}
+                    <p class="section-action">
+                        <a href="{{ url_for('create_team_assignment', team_id=team.id) }}" class="btn-primary btn-primary-inline">Add Assignment</a>
                     </p>
-                    {% if a.description %}<p class="assignment-desc">{{ a.description }}</p>{% endif %}
-                    {% if a.due_date %}<p class="assignment-due">Due {{ a.due_date|fmt_datetime }}</p>{% endif %}
-                    {% if is_coach %}
-                    {% set completion = assignment_completion.get(a.id, (0, 0)) %}
-                    <div class="assignment-progress">
-                        <div class="progress-bar"><div class="progress-fill" style="width: {{ (completion[1] and (completion[0] / completion[1] * 100)) or 0 }}%;"></div></div>
-                        <span class="progress-text">{{ completion[0] }}/{{ completion[1] }} completed</span>
-                    </div>
-                    <div class="assignment-actions">
-                        <a href="{{ url_for('edit_assignment', assignment_id=a.id) }}" class="btn-small btn-secondary">Edit</a>
-                        <form action="{{ url_for('delete_assignment', assignment_id=a.id) }}" method="post" class="assignment-delete-form" onsubmit="return confirm('Delete this assignment?');">
-                            <button type="submit" class="btn-small btn-danger-outline">Delete</button>
-                        </form>
+                    {% endif %}
+                    {% if assignments %}
+                    <div class="assignment-list" id="assignment-list">
+                        {% for a in assignments %}
+                        <div class="assignment-card {{ 'assignment-card-completed' if not is_coach and assignment_status_by_athlete.get(a.id) and assignment_status_by_athlete[a.id].completed else '' }}" data-group-id="{{ a.group_id or '' }}">
+                            <p class="assignment-title">{{ a.title }}</p>
+                            <p class="assignment-badges">
+                                {% if a.athlete_id and a.athlete %}
+                                <span class="assignment-badge assignment-badge-individual">{{ a.athlete.name }}</span>
+                                {% elif a.group_id and a.group %}
+                                <span class="assignment-badge assignment-badge-group">{{ a.group.name }}</span>
+                                {% else %}
+                                <span class="assignment-badge assignment-badge-team">Entire Team</span>
+                                {% endif %}
+                            </p>
+                            {% if a.description %}<p class="assignment-desc">{{ a.description }}</p>{% endif %}
+                            {% if a.due_date %}<p class="assignment-due">Due {{ a.due_date|fmt_datetime }}</p>{% endif %}
+                            {% if is_coach %}
+                            {% set completion = assignment_completion.get(a.id, (0, 0)) %}
+                            <div class="assignment-progress">
+                                <div class="progress-bar"><div class="progress-fill" style="width: {{ (completion[1] and (completion[0] / completion[1] * 100)) or 0 }}%;"></div></div>
+                                <span class="progress-text">{{ completion[0] }}/{{ completion[1] }} completed</span>
+                            </div>
+                            <div class="assignment-actions">
+                                <a href="{{ url_for('edit_assignment', assignment_id=a.id) }}" class="btn-small btn-secondary">Edit</a>
+                                <form action="{{ url_for('delete_assignment', assignment_id=a.id) }}" method="post" class="assignment-delete-form" onsubmit="return confirm('Delete this assignment?');">
+                                    <button type="submit" class="btn-small btn-danger-outline">Delete</button>
+                                </form>
+                            </div>
+                            {% else %}
+                            {% set status = assignment_status_by_athlete.get(a.id) %}
+                            {% if status and status.completed %}
+                            <p class="assignment-status-done"><span class="checkmark">✓</span> Complete</p>
+                            <form action="{{ url_for('assignment_uncomplete', assignment_id=a.id) }}" method="post" style="display: inline;">
+                                <button type="submit" class="btn-danger-outline btn-small">Undo</button>
+                            </form>
+                            {% else %}
+                            <form action="{{ url_for('assignment_complete', assignment_id=a.id) }}" method="post" style="display: inline;">
+                                <button type="submit" class="btn-primary btn-primary-inline btn-small">Mark Complete</button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </div>
                     {% else %}
-                    {% set status = assignment_status_by_athlete.get(a.id) %}
-                    {% if status and status.completed %}
-                    <p class="assignment-status-done"><span class="checkmark">✓</span> Complete</p>
-                    <form action="{{ url_for('assignment_uncomplete', assignment_id=a.id) }}" method="post" style="display: inline;">
-                        <button type="submit" class="btn-danger-outline btn-small">Undo</button>
-                    </form>
-                    {% else %}
-                    <form action="{{ url_for('assignment_complete', assignment_id=a.id) }}" method="post" style="display: inline;">
-                        <button type="submit" class="btn-primary btn-primary-inline btn-small">Mark Complete</button>
-                    </form>
+                    <p class="empty-state empty-state-inline">No assignments yet.</p>
                     {% endif %}
-                    {% endif %}
-                </div>
-                {% endfor %}
+                </section>
             </div>
-            {% else %}
-            <p class="empty-state empty-state-inline">No assignments yet.</p>
-            {% endif %}
-        </section>
-    </div>
+        </div>
+    </main>
 </div>
-
-<section class="section team-settings-section">
-    <h2 class="section-heading">Team Settings</h2>
-    {% if is_coach %}
-    <p class="team-meta">Invite code: <span class="invite-code">{{ team.invite_code }}</span> — share with athletes to join.</p>
-    {% endif %}
-    <p style="margin-top: 0.5rem;">
-        <a href="{{ url_for('team_roster', team_id=team.id) }}" class="back-link">View roster</a>
-        {% if athletes %}({{ athletes|length }} athlete{{ 's' if athletes|length != 1 else '' }}){% endif %}
-    </p>
-</section>
 
 <script>
 (function() {
@@ -188,4 +192,44 @@
 })();
 </script>
 <script src="{{ url_for('static', filename='team_calendar.js') }}"></script>
+<script>
+(function() {
+    var rosterToggle = document.getElementById('roster-toggle');
+    var rosterList = document.getElementById('roster-list');
+    if (rosterToggle && rosterList) {
+        rosterToggle.addEventListener('click', function() {
+            var expanded = rosterList.classList.toggle('expanded');
+            rosterToggle.setAttribute('aria-expanded', expanded);
+        });
+    }
+    document.querySelectorAll('.team-filter-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var groupId = this.getAttribute('data-group-id');
+            document.querySelectorAll('.team-filter-link').forEach(function(l) { l.classList.remove('active'); });
+            this.classList.add('active');
+            document.querySelectorAll('.assignment-card').forEach(function(card) {
+                var cardGroupId = card.getAttribute('data-group-id') || '';
+                if (groupId === '' || String(cardGroupId) === String(groupId)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+    var sidebar = document.getElementById('team-sidebar');
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    var topbarMenu = document.getElementById('topbar-menu');
+    function toggleSidebar() {
+        if (sidebar) sidebar.classList.toggle('open');
+    }
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+    }
+    if (topbarMenu && sidebar) {
+        topbarMenu.addEventListener('click', toggleSidebar);
+    }
+})();
+</script>
 {% endblock %}
