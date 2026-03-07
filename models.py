@@ -70,6 +70,14 @@ class Team(db.Model):
         lazy="dynamic",
     )
 
+    # One team has many assignments
+    assignments = db.relationship(
+        "Assignment",
+        backref="team",
+        lazy="dynamic",
+        foreign_keys="Assignment.team_id",
+    )
+
     @classmethod
     def generate_invite_code(cls) -> str:
         """Generate a random 8-character invite code that is unique in the database."""
@@ -78,6 +86,19 @@ class Team(db.Model):
             if not cls.query.filter_by(invite_code=code).first():
                 return code
         raise RuntimeError("Could not generate unique invite code")
+
+
+class Assignment(db.Model):
+    """Assignment: created by a coach for a team."""
+
+    __tablename__ = "assignments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Athlete(UserMixin, db.Model):

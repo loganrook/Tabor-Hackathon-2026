@@ -24,6 +24,28 @@
     {% endif %}
 </section>
 
+<section class="assignments-overview">
+    <h2>Recent assignments</h2>
+    <p><a href="{{ url_for('create_assignment') }}">Create assignment</a> · <a href="{{ url_for('list_assignments') }}">View all assignments</a></p>
+    {% if teams %}
+    {% for team in teams %}
+    <h3>{{ team.name }}</h3>
+    {% set recent = recent_assignments_by_team.get(team.id, []) %}
+    {% if recent %}
+    <ul>
+        {% for a in recent %}
+        <li><strong>{{ a.title }}</strong>{% if a.description %} — {{ a.description|truncate(80) }}{% endif %}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No assignments yet.</p>
+    {% endif %}
+    {% endfor %}
+    {% else %}
+    <p>Create a team first to add assignments.</p>
+    {% endif %}
+</section>
+
 <section class="create-team">
     <h2>Create team</h2>
     <p><a href="{{ url_for('create_team') }}">Create a new team</a></p>

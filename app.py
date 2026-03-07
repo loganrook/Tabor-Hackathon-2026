@@ -12,7 +12,7 @@ from config import Config
 from extensions import db, login_manager
 
 # Import models after extensions so db is available; registers models with Flask-SQLAlchemy
-from models import Coach, Athlete, Team  # noqa: E402, F401
+from models import Coach, Athlete, Team, Assignment  # noqa: E402, F401
 
 
 def create_app(config_class=Config):
@@ -116,11 +116,22 @@ def create_app(config_class=Config):
     @app.route("/coach/dashboard")
     @login_required
     def coach_dashboard():
-        """Coach-only: roster overview and quick actions (e.g. add athlete)."""
+        """Coach-only: roster overview, assignments, and quick actions."""
         if not isinstance(current_user, Coach):
             return redirect(url_for("athlete_dashboard"))
         teams = current_user.teams.all()
-        return render_template("coach_dashboard.html", teams=teams)
+        recent_assignments_by_team = {
+            t.id: Assignment.query.filter_by(team_id=t.id)
+            .order_by(Assignment.created_at.desc())
+            .limit(5)
+            .all()
+            for t in teams
+        }
+        return render_template(
+            "coach_dashboard.html",
+            teams=teams,
+            recent_assignments_by_team=recent_assignments_by_team,
+        )
 
     @app.route("/team/create", methods=["GET", "POST"])
     @login_required
@@ -151,7 +162,15 @@ def create_app(config_class=Config):
         if not isinstance(current_user, Athlete):
             return redirect(url_for("coach_dashboard"))
         teams = current_user.teams.all()
-        return render_template("athlete_dashboard.html", teams=teams)
+        assignments_by_team = {
+            t.id: t.assignments.order_by(Assignment.created_at.desc()).all()
+            for t in teams
+        }
+        return render_template(
+            "athlete_dashboard.html",
+            teams=teams,
+            assignments_by_team=assignments_by_team,
+        )
 
     @app.route("/roster")
     @login_required
@@ -189,6 +208,50 @@ def create_app(config_class=Config):
             flash("You have joined the team.", "success")
             return redirect(url_for("athlete_dashboard"))
         return render_template("join_team.html")
+
+    @app.route("/assignments/create", methods=["GET", "POST"])
+    @login_required
+    def create_assignment():
+        """Coach-only: form to create an assignment (GET) or create and redirect (POST)."""
+        if not isinstance(current_user, Coach):
+            return redirect(url_for("athlete_dashboard"))
+        teams = current_user.teams.all()
+        if request.method == "POST":
+            title = request.form.get("title", "").strip()
+            description = request.form.get("description", "").strip() or None
+            team_id = request.form.get("team_id", type=int)
+            if not title or not team_id:
+                flash("Title and team are required.", "error")
+                return render_template("create_assignment.html", teams=teams)
+            team = Team.query.get(team_id)
+            if not team or team.coach_id != current_user.id:
+                flash("Invalid team.", "error")
+                return render_template("create_assignment.html", teams=teams)
+            assignment = Assignment(
+                title=title,
+                description=description,
+                team_id=team_id,
+                created_by=current_user.id,
+            )
+            db.session.add(assignment)
+            db.session.commit()
+            flash("Assignment created.", "success")
+            return redirect(url_for("coach_dashboard"))
+        return render_template("create_assignment.html", teams=teams)
+
+    @app.route("/assignments")
+    @login_required
+    def list_assignments():
+        """Coach-only: list all assignments across the coach's teams."""
+        if not isinstance(current_user, Coach):
+            return redirect(url_for("athlete_dashboard"))
+        team_ids = [t.id for t in current_user.teams.all()]
+        assignments = (
+            Assignment.query.filter(Assignment.team_id.in_(team_ids))
+            .order_by(Assignment.created_at.desc())
+            .all()
+        )
+        return render_template("assignments_list.html", assignments=assignments)
 
     with app.app_context():
         db.create_all()

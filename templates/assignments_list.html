@@ -1,0 +1,23 @@
+{# assignments_list.html — All assignments for coach's teams. #}
+{% extends "base.html" %}
+{% block title %}Assignments — Coach–Athlete App{% endblock %}
+
+{% block content %}
+<h1>Assignments</h1>
+<p><a href="{{ url_for('create_assignment') }}">Create assignment</a></p>
+{% if assignments %}
+<ul class="assignments-list">
+    {% for a in assignments %}
+    <li>
+        <strong>{{ a.title }}</strong>
+        {% if a.team %}({{ a.team.name }}){% endif %}
+        — {{ a.created_at.strftime('%Y-%m-%d %H:%M') if a.created_at else '' }}
+        {% if a.description %}<p>{{ a.description }}</p>{% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No assignments yet. <a href="{{ url_for('create_assignment') }}">Create one</a>.</p>
+{% endif %}
+<p><a href="{{ url_for('coach_dashboard') }}">Back to dashboard</a></p>
+{% endblock %}

@@ -27,8 +27,26 @@
 </section>
 
 <section class="assignments">
-    <h2>Assignments</h2>
-    <p>No assignments.</p>
-    <!-- TODO: List assignments for current athlete -->
+    <h2>Assignments by team</h2>
+    {% if teams %}
+    {% for team in teams %}
+    <h3>{{ team.name }}</h3>
+    {% set team_assignments = assignments_by_team.get(team.id, []) %}
+    {% if team_assignments %}
+    <ul>
+        {% for a in team_assignments %}
+        <li>
+            <strong>{{ a.title }}</strong>
+            {% if a.description %}<p>{{ a.description }}</p>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No assignments for this team.</p>
+    {% endif %}
+    {% endfor %}
+    {% else %}
+    <p>Join a team to see assignments.</p>
+    {% endif %}
 </section>
 {% endblock %}
