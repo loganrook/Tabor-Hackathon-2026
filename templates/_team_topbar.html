@@ -5,6 +5,19 @@
             <span class="team-topbar-crumb-root">GamePlan</span>
             <span class="team-topbar-crumb-separator">›</span>
             <span class="team-topbar-crumb-leaf">{{ team.name }}</span>
+            {% if request.endpoint == 'team_settings' %}
+                <span class="team-topbar-crumb-separator">›</span>
+                <span class="team-topbar-crumb-sub">Settings</span>
+            {% elif request.endpoint == 'team_roster' %}
+                <span class="team-topbar-crumb-separator">›</span>
+                <span class="team-topbar-crumb-sub">Roster</span>
+            {% elif request.endpoint == 'team_groups' %}
+                <span class="team-topbar-crumb-separator">›</span>
+                <span class="team-topbar-crumb-sub">Groups</span>
+            {% elif request.endpoint == 'assignment_completions' %}
+                <span class="team-topbar-crumb-separator">›</span>
+                <span class="team-topbar-crumb-sub">Completion</span>
+            {% endif %}
         {% elif request.endpoint == 'dashboard' %}
             GamePlan
         {% else %}

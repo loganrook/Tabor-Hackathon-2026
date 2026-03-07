@@ -20,6 +20,7 @@
                     <div class="calendar-header">
                         <button type="button" class="calendar-nav" id="calendar-prev" aria-label="Previous month">‹</button>
                         <h2 class="calendar-month-title" id="calendar-month-title">{{ cal_month_name }} {{ cal_year }}</h2>
+                        <button type="button" class="calendar-today-btn" id="calendar-today" type="button">Today</button>
                         <button type="button" class="calendar-nav" id="calendar-next" aria-label="Next month">›</button>
                     </div>
                     <div class="calendar-view" id="calendar-view">
@@ -81,9 +82,9 @@
                                 <p class="announcement-content">{{ ann.content }}</p>
                                 <p class="announcement-meta" data-created-at="{{ ann.created_at.isoformat() if ann.created_at else '' }}">
                                     {% if ann.group_id and ann.group %}
-                                    {{ ann.group.name }} group · <span class="announcement-time-relative">{{ ann.created_at|fmt_datetime }}</span>
+                                    {{ ann.group.name }} group · <span class="announcement-time-relative" title="{{ ann.created_at|fmt_datetime }}">{{ ann.created_at|fmt_datetime }}</span>
                                     {% else %}
-                                    Entire Team · <span class="announcement-time-relative">{{ ann.created_at|fmt_datetime }}</span>
+                                    Entire Team · <span class="announcement-time-relative" title="{{ ann.created_at|fmt_datetime }}">{{ ann.created_at|fmt_datetime }}</span>
                                     {% endif %}
                                 </p>
                                 {% if is_coach %}
@@ -234,10 +235,16 @@
         });
     }
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", updateAnnouncementTimes);
-    } else {
+    function initAnnouncementTimes() {
         updateAnnouncementTimes();
+        // Refresh approximately every minute so \"Just now\" / \"2 hours ago\" stays accurate.
+        setInterval(updateAnnouncementTimes, 60000);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initAnnouncementTimes);
+    } else {
+        initAnnouncementTimes();
     }
 })();
 </script>

@@ -988,10 +988,12 @@ body:not(.dashboard-layout) .form-group textarea:focus {
 
 /* ── Team dashboard wrapper, top bar, sidebar (redesign) ── */
 /* Team dashboard layout: fills 100vh, no body scroll. Sidebar + main (topbar + content). */
-html:has(.team-dash-wrapper),
-body:has(.team-dash-wrapper) {
-    overflow: hidden;
-    height: 100vh;
+@media (min-width: 769px) {
+    html:has(.team-dash-wrapper),
+    body:has(.team-dash-wrapper) {
+        overflow: hidden;
+        height: 100vh;
+    }
 }
 
 .team-dash-wrapper {
@@ -1048,6 +1050,12 @@ body:has(.team-dash-wrapper) {
 
 .team-topbar-crumb-leaf {
     font-weight: 700;
+}
+
+.team-topbar-crumb-sub {
+    font-weight: 500;
+    font-size: 0.95em;
+    color: var(--text-muted);
 }
 
 .team-topbar-right {
@@ -1329,6 +1337,13 @@ body:has(.team-dash-wrapper) {
     min-height: 0;
     overflow-y: auto;
     padding: 1.5rem;
+}
+
+.team-page-subheader {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 0.75rem;
 }
 
 .team-page-heading {
@@ -1707,6 +1722,22 @@ body:has(.team-dash-wrapper) {
 .calendar-nav:hover {
     color: #4A90D9;
     border-color: #4A90D9;
+}
+
+.calendar-today-btn {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8125rem;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-left: 0.25rem;
+}
+
+.calendar-today-btn:hover {
+    border-color: #4A90D9;
+    color: #4A90D9;
 }
 
 .calendar-day-today {

@@ -14,6 +14,10 @@
         view: 'grid' // 'grid' | 'day'
     };
 
+    var todayY = parseInt(DATA.today.slice(0, 4), 10);
+    var todayM = parseInt(DATA.today.slice(5, 7), 10);
+    var todayD = parseInt(DATA.today.slice(8, 10), 10);
+
     function daysInMonth(y, m) {
         return new Date(y, m, 0).getDate();
     }
@@ -66,10 +70,6 @@
         var daysTotal = daysInMonth(y, m);
         var activityDays = getActivityDays(y, m);
 
-        var todayY = parseInt(DATA.today.slice(0, 4), 10);
-        var todayM = parseInt(DATA.today.slice(5, 7), 10);
-        var todayD = parseInt(DATA.today.slice(8, 10), 10);
-
         var html = '';
         for (var i = 0; i < first; i++) {
             html += '<div class="calendar-day calendar-day-empty"></div>';
@@ -91,7 +91,8 @@
                 }
             }
 
-            html += '<div class="' + classes + '" data-year="' + y + '" data-month="' + m + '" data-day="' + d + '">';
+            html += '<div class="' + classes + '" data-year="' + y + '" data-month="' + m + '" data-day="' + d + '"' +
+                ' tabindex="0" role="button" aria-label="View ' + MONTHS[m - 1] + ' ' + d + ', ' + y + '">';
             html += '<span class="calendar-day-num">' + d + '</span>';
             if (preview) {
                 var shortTitle = preview.length > 18 ? preview.slice(0, 18) + '\u2026' : preview;
@@ -106,19 +107,28 @@
         var titleEl = document.getElementById('calendar-month-title');
         if (titleEl) titleEl.textContent = MONTHS[m - 1] + ' ' + y;
 
-        var container = document.getElementById('calendar-days');
-        if (container) {
-            container.innerHTML = html;
-            container.querySelectorAll('.calendar-day').forEach(function(cell) {
-                if (cell.classList.contains('calendar-day-empty')) return;
-                cell.addEventListener('click', function() {
-                    var yr = parseInt(cell.getAttribute('data-year'), 10);
-                    var mo = parseInt(cell.getAttribute('data-month'), 10);
-                    var da = parseInt(cell.getAttribute('data-day'), 10);
-                    showDayView(yr, mo, da);
+            var container = document.getElementById('calendar-days');
+            if (container) {
+                container.innerHTML = html;
+                container.querySelectorAll('.calendar-day').forEach(function(cell) {
+                    if (cell.classList.contains('calendar-day-empty')) return;
+                    cell.addEventListener('click', function() {
+                        var yr = parseInt(cell.getAttribute('data-year'), 10);
+                        var mo = parseInt(cell.getAttribute('data-month'), 10);
+                        var da = parseInt(cell.getAttribute('data-day'), 10);
+                        showDayView(yr, mo, da);
+                    });
+                    cell.addEventListener('keydown', function(ev) {
+                        if (ev.key === 'Enter' || ev.key === ' ') {
+                            ev.preventDefault();
+                            var yr = parseInt(cell.getAttribute('data-year'), 10);
+                            var mo = parseInt(cell.getAttribute('data-month'), 10);
+                            var da = parseInt(cell.getAttribute('data-day'), 10);
+                            showDayView(yr, mo, da);
+                        }
+                    });
                 });
-            });
-        }
+            }
     }
 
     function showDayView(y, m, d) {
@@ -276,6 +286,16 @@
         }
     }
 
+    function goToToday() {
+        state.year = todayY;
+        state.month = todayM;
+        if (state.view === 'day') {
+            showDayView(todayY, todayM, todayD);
+        } else {
+            renderGrid();
+        }
+    }
+
     function init() {
         renderGrid();
 
@@ -286,6 +306,9 @@
 
         var backBtn = document.getElementById('back-to-calendar');
         if (backBtn) backBtn.addEventListener('click', backToCalendar);
+
+        var todayBtn = document.getElementById('calendar-today');
+        if (todayBtn) todayBtn.addEventListener('click', goToToday);
     }
 
     if (document.readyState === 'loading') {

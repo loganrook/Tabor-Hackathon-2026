@@ -10,9 +10,9 @@
 
         <div class="team-dash-content">
             <div class="team-page-content">
-                <p class="auth-footer" style="margin-bottom: 1rem;">
+                <div class="team-page-subheader">
                     <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="back-link">← Back to team</a>
-                </p>
+                </div>
                 <h2 class="team-page-heading completion-heading">{{ assignment.title }}</h2>
                 {% if assignment.due_date %}
                 <p class="text-muted completion-due">Due {{ assignment.due_date|fmt_datetime }}</p>

@@ -269,11 +269,11 @@ def create_app(config_class=Config):
             code = request.form.get("invite_code", "").strip().upper()
             if not code:
                 flash("Please enter an invite code.", "error")
-                return render_template("join_team.html")
+                return render_template("join_team.html", invite_code=request.form.get("invite_code", ""))
             team = Team.query.filter_by(invite_code=code).first()
             if not team:
                 flash("Invalid or unknown invite code.", "error")
-                return render_template("join_team.html")
+                return render_template("join_team.html", invite_code=request.form.get("invite_code", ""))
             # Athlete joins as player
             if isinstance(current_user, Athlete):
                 if current_user.teams.filter(Team.id == team.id).first():
@@ -298,7 +298,7 @@ def create_app(config_class=Config):
             # Fallback: unsupported user type
             flash("You cannot join this team with this account type.", "error")
             return redirect(url_for("dashboard"))
-        return render_template("join_team.html")
+        return render_template("join_team.html", invite_code="")
 
     @app.route("/team/<int:team_id>/settings", methods=["GET", "POST"])
     @login_required
