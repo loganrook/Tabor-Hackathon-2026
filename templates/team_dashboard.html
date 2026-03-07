@@ -9,47 +9,10 @@
   {% endif %}
 {% endfor %}
 <div class="team-dash-wrapper">
-    <aside class="team-sidebar" id="team-sidebar">
-        <button type="button" class="team-sidebar-toggle" id="sidebar-toggle" aria-label="Toggle menu"><i class="bi bi-list"></i></button>
-        <nav class="team-sidebar-nav">
-            <div class="team-sidebar-section">
-                <button type="button" class="team-sidebar-expand" id="roster-toggle" aria-expanded="false">Roster</button>
-                <ul class="team-sidebar-roster" id="roster-list">
-                    {% for a in athletes %}
-                    <li>{{ a.name }}</li>
-                    {% endfor %}
-                    {% if not athletes %}<li class="text-muted">No athletes yet</li>{% endif %}
-                </ul>
-            </div>
-            <div class="team-sidebar-section">
-                <span class="team-sidebar-label">Groups</span>
-                {% if is_coach %}
-                <a href="{{ url_for('create_group', team_id=team.id) }}" class="team-sidebar-create">+ New group</a>
-                {% endif %}
-                <ul class="team-sidebar-groups">
-                    <li><a href="#" class="team-filter-link active" data-group-id="">All</a></li>
-                    {% for g in sidebar_groups %}
-                    <li><a href="#" class="team-filter-link" data-group-id="{{ g.id }}">{{ g.name }}</a></li>
-                    {% endfor %}
-                    {% if not sidebar_groups %}<li class="text-muted">No groups</li>{% endif %}
-                </ul>
-            </div>
-            {% if is_coach %}
-            <div class="team-sidebar-footer">
-                <a href="{{ url_for('team_settings', team_id=team.id) }}" class="team-sidebar-settings" title="Team settings"><i class="bi bi-gear"></i></a>
-            </div>
-            {% endif %}
-        </nav>
-    </aside>
+    {% include '_team_sidebar.html' %}
 
     <main class="team-dash-main">
-        <header class="team-topbar">
-            <a href="{{ url_for('dashboard') }}" class="team-topbar-home"><i class="bi bi-house"></i> My Teams</a>
-            <div class="team-topbar-right">
-                <span class="team-profile-circle" title="{{ current_user.name }}">{{ current_user.name[0]|upper if current_user.name else '?' }}</span>
-                <a href="{{ url_for('logout') }}" class="team-topbar-logout">Log out</a>
-            </div>
-        </header>
+        {% include '_team_topbar.html' %}
 
         <div class="team-dash-content">
             <div class="team-dash-center">
@@ -220,30 +183,6 @@
 <script src="{{ url_for('static', filename='team_calendar.js') }}"></script>
 <script>
 (function() {
-    var rosterToggle = document.getElementById('roster-toggle');
-    var rosterList = document.getElementById('roster-list');
-    if (rosterToggle && rosterList) {
-        rosterToggle.addEventListener('click', function() {
-            var expanded = rosterList.classList.toggle('expanded');
-            rosterToggle.setAttribute('aria-expanded', expanded);
-        });
-    }
-    document.querySelectorAll('.team-filter-link').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            var groupId = this.getAttribute('data-group-id');
-            document.querySelectorAll('.team-filter-link').forEach(function(l) { l.classList.remove('active'); });
-            this.classList.add('active');
-            document.querySelectorAll('.assignment-card').forEach(function(card) {
-                var cardGroupId = card.getAttribute('data-group-id') || '';
-                if (groupId === '' || String(cardGroupId) === String(groupId)) {
-                    card.style.display = '';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        });
-    });
     var sidebar = document.getElementById('team-sidebar');
     var sidebarToggle = document.getElementById('sidebar-toggle');
     var announcePlus = document.getElementById('announce-plus');

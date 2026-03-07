@@ -438,8 +438,40 @@ def create_app(config_class=Config):
             db.session.add(group)
             db.session.commit()
             flash("Group created.", "success")
-            return redirect(url_for("team_dashboard", team_id=team_id))
+            return redirect(url_for("team_groups", team_id=team_id))
         return render_template("group_create.html", team=team)
+
+    @app.route("/team/<int:team_id>/groups")
+    @login_required
+    def team_groups(team_id):
+        """List all groups for the team. Same layout as dashboard/roster."""
+        team = Team.query.get_or_404(team_id)
+        if not _user_can_access_team(team):
+            flash("You do not have access to this team.", "error")
+            return redirect(url_for("dashboard"))
+        groups = team.groups.order_by(Group.name).all()
+        is_coach = isinstance(current_user, Coach) and team.coach_id == current_user.id
+        return render_template(
+            "team_groups.html",
+            team=team,
+            groups=groups,
+            is_coach=is_coach,
+        )
+
+    @app.route("/team/<int:team_id>/group/<int:group_id>/delete", methods=["POST"])
+    @login_required
+    def delete_group(team_id, group_id):
+        """Coach only: delete a group."""
+        team = Team.query.get_or_404(team_id)
+        group = Group.query.filter_by(id=group_id, team_id=team_id).first_or_404()
+        if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
+            flash("You cannot delete this group.", "error")
+            return redirect(url_for("dashboard"))
+        group.athletes = []
+        db.session.delete(group)
+        db.session.commit()
+        flash("Group deleted.", "success")
+        return redirect(url_for("team_groups", team_id=team_id))
 
     @app.route("/team/<int:team_id>/group/<int:group_id>/manage", methods=["GET", "POST"])
     @login_required
@@ -456,7 +488,7 @@ def create_app(config_class=Config):
             group.athletes = [a for a in athletes if str(a.id) in selected_ids]
             db.session.commit()
             flash("Group updated.", "success")
-            return redirect(url_for("team_dashboard", team_id=team_id))
+            return redirect(url_for("team_groups", team_id=team_id))
         group_member_ids = {a.id for a in group.athletes.all()}
         return render_template(
             "group_manage.html",
@@ -473,8 +505,6 @@ def create_app(config_class=Config):
         team = Team.query.get_or_404(team_id)
         if not _user_can_access_team(team):
             flash("You do not have access to this team.", "error")
-            if isinstance(current_user, Coach):
-                return redirect(url_for("dashboard"))
             return redirect(url_for("dashboard"))
         athletes = team.athletes.all()
         is_coach = isinstance(current_user, Coach) and team.coach_id == current_user.id
@@ -484,6 +514,34 @@ def create_app(config_class=Config):
             athletes=athletes,
             is_coach=is_coach,
         )
+
+    @app.route("/team/<int:team_id>/roster/remove", methods=["POST"])
+    @login_required
+    def roster_remove(team_id):
+        """Coach only: remove an athlete from the team."""
+        team = Team.query.get_or_404(team_id)
+        if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
+            flash("You cannot remove athletes from this team.", "error")
+            return redirect(url_for("dashboard"))
+        athlete_id = request.form.get("athlete_id", type=int)
+        if not athlete_id:
+            flash("Invalid request.", "error")
+            return redirect(url_for("team_roster", team_id=team_id))
+        athlete = Athlete.query.get(athlete_id)
+        if not athlete or athlete not in team.athletes.all():
+            flash("Athlete not on this team.", "error")
+            return redirect(url_for("team_roster", team_id=team_id))
+        team.athletes.remove(athlete)
+        for group in team.groups.all():
+            if athlete in group.athletes.all():
+                group.athletes.remove(athlete)
+        for assignment in team.assignments.all():
+            AssignmentStatus.query.filter_by(
+                assignment_id=assignment.id, athlete_id=athlete_id
+            ).delete()
+        db.session.commit()
+        flash("Athlete removed from team.", "success")
+        return redirect(url_for("team_roster", team_id=team_id))
 
     @app.route("/team/<int:team_id>/assignment/create", methods=["GET", "POST"])
     @login_required

@@ -1,0 +1,8 @@
+{# _team_topbar.html — Team top bar: team name left, profile circle + Log out right. #}
+<header class="team-topbar">
+    <h1 class="team-topbar-name">{{ team.name }}</h1>
+    <div class="team-topbar-right">
+        <span class="team-profile-circle" title="{{ current_user.name }}">{{ current_user.name[0]|upper if current_user.name else '?' }}</span>
+        <a href="{{ url_for('logout') }}" class="team-topbar-logout">Log out</a>
+    </div>
+</header>

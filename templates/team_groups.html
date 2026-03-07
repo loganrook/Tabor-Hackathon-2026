@@ -1,0 +1,56 @@
+{# team_groups.html — Groups page with same sidebar + top bar. Coach: Create Group, Manage Members, Delete Group. #}
+{% extends "base.html" %}
+{% block title %}Groups — {{ team.name }}{% endblock %}
+{% block content %}
+<div class="team-dash-wrapper">
+    {% include '_team_sidebar.html' %}
+
+    <main class="team-dash-main">
+        {% include '_team_topbar.html' %}
+
+        <div class="team-dash-content">
+            <div class="team-page-content">
+                <div class="team-page-heading-row">
+                    <h2 class="team-page-heading">Groups</h2>
+                    {% if is_coach %}
+                    <a href="{{ url_for('create_group', team_id=team.id) }}" class="btn-primary">Create Group</a>
+                    {% endif %}
+                </div>
+                {% if groups %}
+                <div class="team-groups-grid">
+                    {% for g in groups %}
+                    <div class="team-group-card">
+                        <a href="{{ url_for('manage_group', team_id=team.id, group_id=g.id) }}" class="team-group-card-link">
+                            <p class="team-group-name">{{ g.name }}</p>
+                            <p class="team-group-meta">{{ g.athletes.count() }} member{{ 's' if g.athletes.count() != 1 else '' }}</p>
+                        </a>
+                        {% if is_coach %}
+                        <div class="team-group-actions">
+                            <a href="{{ url_for('manage_group', team_id=team.id, group_id=g.id) }}" class="btn-small btn-secondary">Manage Members</a>
+                            <form action="{{ url_for('delete_group', team_id=team.id, group_id=g.id) }}" method="post" class="team-group-delete-form" onsubmit="return confirm('Delete this group? This cannot be undone.');">
+                                <button type="submit" class="btn-small btn-danger-outline">Delete Group</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="empty-state">No groups yet.{% if is_coach %} Create position groups (e.g. Quarterbacks, O-Line) and assign athletes.{% endif %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+(function() {
+    var sidebar = document.getElementById('team-sidebar');
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+        });
+    }
+})();
+</script>
+{% endblock %}

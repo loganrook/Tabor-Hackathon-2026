@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
     <h1>{{ group.name }}</h1>
-    <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="back-link">← Back to team</a>
+    <a href="{{ url_for('team_groups', team_id=team.id) }}" class="back-link">← Back to groups</a>
 </div>
 
 <p class="team-meta" style="margin-bottom: 1.5rem;">Select athletes who belong to this group.</p>

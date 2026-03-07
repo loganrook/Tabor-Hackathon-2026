@@ -1,19 +1,47 @@
-{# team_roster.html — Roster for one team: back to team, simple list. #}
+{# team_roster.html — Roster page with same sidebar + top bar layout. Coach: Remove from team. #}
 {% extends "base.html" %}
 {% block title %}Roster — {{ team.name }}{% endblock %}
 {% block content %}
-<div class="page-header">
-    <h1>Roster — {{ team.name }}</h1>
-    <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="back-link">← Back to team</a>
-</div>
+<div class="team-dash-wrapper">
+    {% include '_team_sidebar.html' %}
 
-{% if athletes %}
-<ul class="roster-list">
-    {% for a in athletes %}
-    <li>{{ a.name }} — {{ a.email }}</li>
-    {% endfor %}
-</ul>
-{% else %}
-<p class="empty-state empty-state-inline">No athletes on this team yet.</p>
-{% endif %}
+    <main class="team-dash-main">
+        {% include '_team_topbar.html' %}
+
+        <div class="team-dash-content">
+            <div class="team-page-content">
+                <h2 class="team-page-heading">Roster</h2>
+                {% if athletes %}
+                <ul class="roster-list roster-page-list">
+                    {% for a in athletes %}
+                    <li class="roster-page-item">
+                        <span class="roster-page-name">{{ a.name }}</span>
+                        <span class="roster-page-email">{{ a.email }}</span>
+                        {% if is_coach %}
+                        <form action="{{ url_for('roster_remove', team_id=team.id) }}" method="post" class="roster-remove-form" onsubmit="return confirm('Remove {{ a.name }} from the team?');">
+                            <input type="hidden" name="athlete_id" value="{{ a.id }}">
+                            <button type="submit" class="btn-small btn-danger-outline">Remove from team</button>
+                        </form>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="empty-state">No athletes on this team yet. Share the invite code so they can join.</p>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+(function() {
+    var sidebar = document.getElementById('team-sidebar');
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+        });
+    }
+})();
+</script>
 {% endblock %}
