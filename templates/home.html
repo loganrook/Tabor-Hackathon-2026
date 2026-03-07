@@ -1,15 +1,13 @@
-{# home.html — Landing page rendered by the / (index) route in app.py.
-   Landing buttons: Login + Sign up (role selection happens AFTER clicking Sign up). #}
+{# home.html — Landing page. App name, one-line description, Sign In and Sign Up. #}
 {% extends "base.html" %}
 {% block title %}CoachHub{% endblock %}
 {% block content %}
 <div class="hero-block hero-saas">
-    <h1>Connect with your coach and team.</h1>
-    <p class="hero-sub">Create teams, assign work, and track progress in one place.</p>
-    <!-- Landing buttons: Login + Sign up (role selection happens after) -->
+    <h1>CoachHub</h1>
+    <p class="hero-sub">Connect with your coach and team — create teams, assign work, and track progress in one place.</p>
     <div class="hero-buttons">
-        <a href="{{ url_for('login') }}" class="btn-hero"><i class="bi bi-box-arrow-in-right"></i> Log in</a>
-        <a href="{{ url_for('choose_role') }}" class="btn-hero"><i class="bi bi-person-plus"></i> Sign up</a>
+        <a href="{{ url_for('login') }}" class="btn-hero">Sign In</a>
+        <a href="{{ url_for('register') }}" class="btn-hero">Sign Up</a>
     </div>
 </div>
 {% endblock %}

@@ -17,8 +17,8 @@
             <span class="nav-user-name">{{ current_user.name }}</span>
             <a href="{{ url_for('logout') }}">Log out</a>
             {% else %}
-            <a href="{{ url_for('login') }}">Log in</a>
-            <a href="{{ url_for('choose_role') }}">Sign up</a>
+            <a href="{{ url_for('login') }}">Sign In</a>
+            <a href="{{ url_for('register') }}">Sign Up</a>
             {% endif %}
         </div>
     </nav>

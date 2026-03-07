@@ -131,13 +131,6 @@ def create_app(config_class=Config):
             return render_template("login.html")
         return render_template("login.html")
 
-    @app.route("/register/choose-role")
-    def choose_role():
-        """Intermediate sign-up step: pick Coach or Athlete before registration."""
-        if current_user.is_authenticated:
-            return redirect(url_for("dashboard"))
-        return render_template("choose_role.html")
-
     @app.route("/register", methods=["GET", "POST"])
     def register():
         """Show registration form (GET) or create Coach/Athlete and log in (POST)."""
@@ -424,27 +417,6 @@ def create_app(config_class=Config):
             is_coach=is_coach,
         )
 
-    @app.route("/roster")
-    @login_required
-    def roster():
-        """List athletes for the current coach/context (across all coach's teams)."""
-        if not isinstance(current_user, Coach):
-            return redirect(url_for("dashboard"))
-        athletes = (
-            Athlete.query.filter(Athlete.teams.any(Team.coach_id == current_user.id))
-            .distinct()
-            .all()
-        )
-        team_names_by_athlete = {
-            a.id: [t.name for t in a.teams if t.coach_id == current_user.id]
-            for a in athletes
-        }
-        return render_template(
-            "roster.html",
-            athletes=athletes,
-            team_names_by_athlete=team_names_by_athlete,
-        )
-
     @app.route("/team/<int:team_id>/assignment/create", methods=["GET", "POST"])
     @login_required
     def create_team_assignment(team_id):
@@ -727,20 +699,6 @@ def create_app(config_class=Config):
         db.session.commit()
         flash("Announcement deleted.", "success")
         return redirect(url_for("team_dashboard", team_id=team.id))
-
-    @app.route("/assignments")
-    @login_required
-    def list_assignments():
-        """Coach-only: list all assignments across the coach's teams."""
-        if not isinstance(current_user, Coach):
-            return redirect(url_for("dashboard"))
-        team_ids = [t.id for t in current_user.teams.all()]
-        assignments = (
-            Assignment.query.filter(Assignment.team_id.in_(team_ids))
-            .order_by(Assignment.created_at.desc())
-            .all()
-        )
-        return render_template("assignments_list.html", assignments=assignments)
 
     with app.app_context():
         db.create_all()
