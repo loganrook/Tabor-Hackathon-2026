@@ -7,7 +7,6 @@
     if (!DATA) return;
 
     var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    var WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     var state = {
         year: parseInt(DATA.today.slice(0, 4), 10),
@@ -20,7 +19,8 @@
     }
 
     function firstWeekday(y, m) {
-        return (new Date(y, m - 1, 1).getDay() + 6) % 7;
+        // Sunday-based: 0 = Sunday, 1 = Monday, ... 6 = Saturday
+        return new Date(y, m - 1, 1).getDay();
     }
 
     function dateKey(y, m, d) {
@@ -80,9 +80,26 @@
             var classes = 'calendar-day';
             if (isTodayCell) classes += ' calendar-day-today';
             if (hasActivity) classes += ' calendar-day-has-activity';
-            html += '<div class="calendar-day ' + classes + '" data-year="' + y + '" data-month="' + m + '" data-day="' + d + '">';
+
+            var key = dateKey(y, m, d);
+            var preview = null;
+            for (var iAssign = 0; iAssign < DATA.assignments.length; iAssign++) {
+                var a = DATA.assignments[iAssign];
+                if (a.due_date === key) {
+                    preview = a.title || '';
+                    break;
+                }
+            }
+
+            html += '<div class="' + classes + '" data-year="' + y + '" data-month="' + m + '" data-day="' + d + '">';
             html += '<span class="calendar-day-num">' + d + '</span>';
-            if (hasActivity) html += '<span class="calendar-dot"></span>';
+            if (preview) {
+                var shortTitle = preview.length > 18 ? preview.slice(0, 18) + '\u2026' : preview;
+                html += '<div class="calendar-preview">' + escapeHtml(shortTitle) + '</div>';
+            }
+            if (hasActivity) {
+                html += '<span class="calendar-dot"></span>';
+            }
             html += '</div>';
         }
 
@@ -161,15 +178,27 @@
         document.getElementById('calendar-day-view').classList.remove('hidden');
     }
 
-    function formatAnnouncementTime(iso) {
+    function formatTimeAgo(iso) {
         if (!iso) return '';
-        var d = new Date(iso);
+        var then = new Date(iso);
+        if (isNaN(then.getTime())) return '';
+        var now = new Date();
+        var diffMs = now - then;
+        if (diffMs < 0) diffMs = 0;
+        var seconds = Math.floor(diffMs / 1000);
+        var minutes = Math.floor(seconds / 60);
+        var hours = Math.floor(minutes / 60);
+        var days = Math.floor(hours / 24);
+        if (seconds < 45) return 'Just now';
+        if (minutes < 60) return minutes === 1 ? '1 minute ago' : minutes + ' minutes ago';
+        if (hours < 24) return hours === 1 ? '1 hour ago' : hours + ' hours ago';
+        if (days < 7) return days === 1 ? '1 day ago' : days + ' days ago';
         var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var h = d.getHours();
-        var h12 = (h % 12) || 12;
-        var min = d.getMinutes();
-        var ampm = h < 12 ? 'AM' : 'PM';
-        return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' at ' + h12 + ':' + (min < 10 ? '0' : '') + min + ' ' + ampm;
+        return months[then.getMonth()] + ' ' + then.getDate() + ', ' + then.getFullYear();
+    }
+
+    function formatAnnouncementTime(iso) {
+        return formatTimeAgo(iso);
     }
 
     function escapeHtml(s) {

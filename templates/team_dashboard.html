@@ -1,6 +1,6 @@
 {# team_dashboard.html — Top bar (center+right only), sidebar unchanged, center = calendar, right = announcements + assignments. #}
 {% extends "base.html" %}
-{% block title %}{{ team.name }} — CoachHub{% endblock %}
+{% block title %}{{ team.name }} — GamePlan{% endblock %}
 {% block content %}
 {% set ns = namespace(announcement_days=[]) %}
 {% for ann in announcements %}
@@ -25,15 +25,28 @@
                     <div class="calendar-view" id="calendar-view">
                         <div class="calendar-grid">
                             <div class="calendar-weekdays">
-                                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
                             </div>
                             <div class="calendar-days" id="calendar-days">
-                                {% for i in range(first_weekday) %}
+                                {% set sun_offset = (first_weekday + 1) % 7 %}
+                                {% for i in range(sun_offset) %}
                                 <div class="calendar-day calendar-day-empty calendar-day-outside"></div>
                                 {% endfor %}
                                 {% for day in range(1, days_in_month + 1) %}
                                 <div class="calendar-day {{ 'calendar-day-today' if day == cal_today else '' }} {{ 'calendar-day-has-assignment' if day in assignment_due_days else '' }} {{ 'calendar-day-has-announcement' if day in ns.announcement_days else '' }}" data-year="{{ cal_year }}" data-month="{{ cal_month }}" data-day="{{ day }}">
                                     <span class="calendar-day-num">{{ day }}</span>
+                                    {% set ns_cell = namespace(done=False) %}
+                                    {% for a in assignments %}
+                                        {% if (not ns_cell.done)
+                                              and a.due_date
+                                              and a.due_date.year == cal_year
+                                              and a.due_date.month == cal_month
+                                              and a.due_date.day == day %}
+                                            {% set preview = a.title[:18] %}
+                                            <div class="calendar-preview">{{ preview }}{% if a.title|length > 18 %}…{% endif %}</div>
+                                            {% set ns_cell.done = True %}
+                                        {% endif %}
+                                    {% endfor %}
                                     <span class="calendar-dots">
                                         {% if day in assignment_due_days %}<span class="calendar-dot calendar-dot-assignment" title="Assignments due"></span>{% endif %}
                                         {% if day in ns.announcement_days %}<span class="calendar-dot calendar-dot-announcement" title="Announcements"></span>{% endif %}
@@ -57,7 +70,7 @@
                     <div class="team-right-box-header">
                         <h2 class="team-right-box-title">Announcements</h2>
                         {% if is_coach %}
-                        <a href="{{ url_for('create_team_announcement', team_id=team.id) }}" class="team-right-box-plus" aria-label="Post announcement"><i class="bi bi-plus-lg"></i></a>
+                        <a href="{{ url_for('create_team_announcement', team_id=team.id) }}" class="team-right-box-plus" aria-label="New Announcement" title="New Announcement"><i class="bi bi-plus-lg"></i></a>
                         {% endif %}
                     </div>
                     <div class="team-right-box-inner">
@@ -66,11 +79,11 @@
                             {% for ann in announcements %}
                             <div class="announcement-card {{ 'announcement-card-auto' if ann.is_auto else '' }}">
                                 <p class="announcement-content">{{ ann.content }}</p>
-                                <p class="announcement-meta">
+                                <p class="announcement-meta" data-created-at="{{ ann.created_at.isoformat() if ann.created_at else '' }}">
                                     {% if ann.group_id and ann.group %}
-                                    {{ ann.group.name }} group · {{ ann.created_at|fmt_datetime }}
+                                    {{ ann.group.name }} group · <span class="announcement-time-relative">{{ ann.created_at|fmt_datetime }}</span>
                                     {% else %}
-                                    Entire Team · {{ ann.created_at|fmt_datetime }}
+                                    Entire Team · <span class="announcement-time-relative">{{ ann.created_at|fmt_datetime }}</span>
                                     {% endif %}
                                 </p>
                                 {% if is_coach %}
@@ -85,7 +98,10 @@
                             {% endfor %}
                         </div>
                         {% else %}
-                        <p class="empty-state empty-state-inline">No announcements yet.</p>
+                        <div class="empty-state empty-state-inline empty-state-compact">
+                            <div class="empty-state-icon"><i class="bi bi-megaphone"></i></div>
+                            <p>No announcements yet.</p>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -94,7 +110,7 @@
                     <div class="team-right-box-header">
                         <h2 class="team-right-box-title">Assignments</h2>
                         {% if is_coach %}
-                        <a href="{{ url_for('create_team_assignment', team_id=team.id) }}" class="team-right-box-plus" aria-label="Add assignment"><i class="bi bi-plus-lg"></i></a>
+                        <a href="{{ url_for('create_team_assignment', team_id=team.id) }}" class="team-right-box-plus" aria-label="New Assignment" title="New Assignment"><i class="bi bi-plus-lg"></i></a>
                         {% endif %}
                     </div>
                     <div class="team-right-box-inner">
@@ -139,7 +155,10 @@
                             {% endfor %}
                         </div>
                         {% else %}
-                        <p class="empty-state empty-state-inline">No assignments yet.</p>
+                        <div class="empty-state empty-state-inline empty-state-compact">
+                            <div class="empty-state-icon"><i class="bi bi-clipboard-check"></i></div>
+                            <p>No assignments yet.</p>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -174,6 +193,47 @@
         sidebarToggle.addEventListener('click', function() {
             sidebar.classList.toggle('open');
         });
+    }
+})();
+</script>
+<script>
+(function() {
+    function formatTimeAgo(iso, now) {
+        if (!iso) return "";
+        var then = new Date(iso);
+        if (isNaN(then.getTime())) return "";
+        now = now || new Date();
+        var diffMs = now - then;
+        if (diffMs < 0) diffMs = 0;
+        var seconds = Math.floor(diffMs / 1000);
+        var minutes = Math.floor(seconds / 60);
+        var hours = Math.floor(minutes / 60);
+        var days = Math.floor(hours / 24);
+        if (seconds < 45) return "Just now";
+        if (minutes < 60) return minutes === 1 ? "1 minute ago" : minutes + " minutes ago";
+        if (hours < 24) return hours === 1 ? "1 hour ago" : hours + " hours ago";
+        if (days < 7) return days === 1 ? "1 day ago" : days + " days ago";
+        var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        return months[then.getMonth()] + " " + then.getDate() + ", " + then.getFullYear();
+    }
+
+    function updateAnnouncementTimes() {
+        var now = new Date();
+        document.querySelectorAll(".announcement-card").forEach(function(card) {
+            var meta = card.querySelector(".announcement-meta");
+            if (!meta) return;
+            var iso = meta.getAttribute("data-created-at");
+            if (!iso) return;
+            var span = meta.querySelector(".announcement-time-relative");
+            if (!span) return;
+            span.textContent = formatTimeAgo(iso, now);
+        });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", updateAnnouncementTimes);
+    } else {
+        updateAnnouncementTimes();
     }
 })();
 </script>

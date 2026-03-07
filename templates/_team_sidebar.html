@@ -9,12 +9,23 @@
         <hr class="team-sidebar-divider">
         {# Team-specific links only render when a team is in context #}
         {% if team is defined %}
-        <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-sidebar-link {{ 'active' if request.endpoint == 'team_dashboard' else '' }}">Team Hub</a>
-        <a href="{{ url_for('team_roster', team_id=team.id) }}" class="team-sidebar-link {{ 'active' if request.endpoint == 'team_roster' else '' }}">Roster</a>
-        <a href="{{ url_for('team_groups', team_id=team.id) }}" class="team-sidebar-link {{ 'active' if request.endpoint == 'team_groups' else '' }}">Groups</a>
+        <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-sidebar-link {{ 'active' if request.endpoint == 'team_dashboard' else '' }}">
+            <span class="team-sidebar-label">Team Hub</span>
+        </a>
+        <a href="{{ url_for('team_roster', team_id=team.id) }}" class="team-sidebar-link {{ 'active' if request.endpoint == 'team_roster' else '' }}">
+            <span class="team-sidebar-label">Roster</span>
+        </a>
+        <a href="{{ url_for('team_groups', team_id=team.id) }}" class="team-sidebar-link {{ 'active' if request.endpoint == 'team_groups' else '' }}">
+            <span class="team-sidebar-label">Groups</span>
+        </a>
         {% if is_coach %}
         <div class="team-sidebar-footer">
-            <a href="{{ url_for('team_settings', team_id=team.id) }}" class="team-sidebar-settings" title="Team Settings"><i class="bi bi-gear"></i><span>Team Settings</span></a>
+            <a href="{{ url_for('team_settings', team_id=team.id) }}" class="team-sidebar-link team-sidebar-settings {{ 'active' if request.endpoint == 'team_settings' else '' }}" title="Team Settings">
+                <span class="team-sidebar-label">
+                    <i class="bi bi-gear"></i>
+                    <span>Team Settings</span>
+                </span>
+            </a>
         </div>
         {% endif %}
         {% endif %}

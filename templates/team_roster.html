@@ -12,6 +12,9 @@
             <div class="team-page-content">
                 <h2 class="team-page-heading">Roster</h2>
                 {% if athletes %}
+                <p class="roster-count">{{ athletes|length }} player{% if athletes|length != 1 %}s{% endif %}</p>
+                {% endif %}
+                {% if athletes %}
                 <ul class="roster-list roster-page-list">
                     {% for a in athletes %}
                     <li class="roster-page-item">

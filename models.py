@@ -35,6 +35,13 @@ group_members = db.Table(
     db.Column("athlete_id", db.Integer, db.ForeignKey("athletes.id"), primary_key=True),
 )
 
+# Many-to-many: additional coaches can join teams (assistant / staff coaches)
+coach_teams = db.Table(
+    "coach_teams",
+    db.Column("coach_id", db.Integer, db.ForeignKey("coaches.id"), primary_key=True),
+    db.Column("team_id", db.Integer, db.ForeignKey("teams.id"), primary_key=True),
+)
+
 
 class Coach(UserMixin, db.Model):
     """Coach user: can log in, own teams, and manage athletes."""
@@ -46,9 +53,15 @@ class Coach(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=_local_now)
+    coach_type = db.Column(db.String(50), nullable=False, default="coach")
 
-    # Relationship: one coach has many teams
+    # Relationship: one coach has many teams they own (head coach per team)
     teams = db.relationship("Team", backref="coach", lazy="dynamic", foreign_keys="Team.coach_id")
+
+    __mapper_args__ = {
+        "polymorphic_on": coach_type,
+        "polymorphic_identity": "coach",
+    }
 
     def set_password(self, password: str) -> None:
         """Hash the password and store it in self.password_hash."""
@@ -61,6 +74,14 @@ class Coach(UserMixin, db.Model):
     def get_id(self) -> str:
         """Return a unique id for Flask-Login; prefix so user_loader can distinguish Coach from Athlete."""
         return f"coach-{self.id}"
+
+
+class HeadCoach(Coach):
+    """Head coach type (shares coaches table via single-table inheritance)."""
+
+    __mapper_args__ = {
+        "polymorphic_identity": "head",
+    }
 
 
 class Team(db.Model):
@@ -79,6 +100,14 @@ class Team(db.Model):
         "Athlete",
         secondary=athlete_teams,
         backref=db.backref("teams", lazy="dynamic"),
+        lazy="dynamic",
+    )
+
+    # Many-to-many: additional coaches (staff) on this team, besides the owning coach
+    coaches = db.relationship(
+        "Coach",
+        secondary=coach_teams,
+        backref=db.backref("joined_teams", lazy="dynamic"),
         lazy="dynamic",
     )
 

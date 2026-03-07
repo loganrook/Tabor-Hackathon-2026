@@ -1,6 +1,6 @@
-# Hackathon — CoachHub
+# GamePlan
 
-A coach–athlete management web app built with Flask for a hackathon. Coaches create teams and share invite codes; athletes join teams and view assignments. UI uses Bootstrap 5 and Bootstrap Icons (CoachHub branding).
+GamePlan is a coach–athlete management web app built with Flask. Coaches create teams and share invite codes; athletes join teams and view assignments. UI uses Bootstrap 5, Bootstrap Icons, and custom GamePlan branding.
 
 ## Stack
 
@@ -53,3 +53,10 @@ python -m pytest tests/ -v
 ```
 
 Tests are stubs for now; implement them as you add features (e.g. login, DB operations).
+
+## Team dashboard UI
+
+- **Calendar**: The team dashboard calendar now starts weeks on Sunday, stretches rows to fill the available height, and shows a tiny preview of the first assignment title inside each day cell so coaches can quickly scan what’s coming.
+- **Sidebar & roster**: The team sidebar focuses on simple section labels (Team Hub, Roster, Groups, Team Settings), while the roster page itself shows a player count under the `Roster` heading (for example, `5 players`).
+- **Top bar**: When viewing a team, the top bar shows a breadcrumb-style context like `GamePlan › Football`, with the team name slightly larger and bolder for orientation.
+- **Right column**: The announcements/assignments column is slightly wider, announcement timestamps use friendly “time ago” text like `Just now` or `2 hours ago`, the plus icons have hover tooltips, and empty states include subtle icons so they feel intentional rather than broken.

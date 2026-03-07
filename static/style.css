@@ -1,14 +1,14 @@
 /*
-  style.css — Clean minimal styles for CoachHub (Google Classroom meets Apple).
+  style.css — GamePlan UI: sleek, modern, minimal (Google Classroom meets Apple).
   Typography: system-ui. Layout: centered max-width, lots of whitespace.
 */
 
 :root {
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --text: #1e293b;
-    --text-muted: #64748b;
-    --bg: #f8fafc;
+    --primary: #4A90D9;
+    --primary-hover: #357ABD;
+    --text: #333333;
+    --text-muted: #888888;
+    --bg: #f5f5f7;
     --surface: #ffffff;
     --success-bg: #d1fae5;
     --success-text: #065f46;
@@ -20,10 +20,10 @@
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
     /* SaaS dashboard */
-    --bg-saas: #F5F7FA;
-    --accent: #0d9488;
-    --accent-hover: #0f766e;
-    --accent-light: rgba(13, 148, 136, 0.12);
+    --bg-saas: #f5f5f7;
+    --accent: #4A90D9;
+    --accent-hover: #357ABD;
+    --accent-light: rgba(74, 144, 217, 0.12);
     --radius-saas: 18px;
     --shadow-saas: 0 2px 12px rgba(0, 0, 0, 0.06);
     --shadow-saas-hover: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -41,6 +41,58 @@ body {
     flex-direction: column;
     color: var(--text);
     margin: 0;
+}
+
+/* Global smooth transitions for interactive elements */
+a,
+button,
+.btn-primary,
+.btn-secondary,
+.btn-hero,
+.btn-saas,
+.team-card,
+.assignment-card,
+.announcement-card,
+.team-sidebar-link,
+.team-sidebar-home,
+.calendar-day,
+input,
+textarea,
+select,
+.team-profile-circle,
+.nav-minimal .nav-logo,
+.nav-minimal .nav-right a {
+    transition:
+        color 0.2s ease,
+        background-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.15s ease,
+        border-color 0.2s ease,
+        opacity 0.2s ease;
+}
+
+/* Global scrollbars */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.35);
 }
 
 body:not(.dashboard-layout) {
@@ -137,6 +189,18 @@ body:not(.dashboard-layout) .auth-footer a {
     text-align: center;
     font-size: 0.9375rem;
     margin-bottom: 0;
+    animation: flash-slide-in 0.25s ease-out;
+}
+
+@keyframes flash-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes flash-fade-out {
@@ -222,7 +286,7 @@ body:not(.dashboard-layout) .auth-footer a {
 .form-group input,
 .form-group textarea {
     width: 100%;
-    padding: 0.625rem 0.75rem;
+    padding: 0.75rem 1rem;
     font-size: 1rem;
     font-family: inherit;
     border: 1px solid #e2e8f0;
@@ -235,7 +299,7 @@ body:not(.dashboard-layout) .auth-footer a {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.18);
 }
 
 body:not(.dashboard-layout) .form-group input:focus,
@@ -297,10 +361,18 @@ body:not(.dashboard-layout) .form-group textarea:focus {
     text-align: center;
     text-decoration: none;
     box-sizing: border-box;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
 .btn-primary:hover {
     background: var(--primary-hover);
+    transform: scale(1.02);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary {
@@ -308,36 +380,44 @@ body:not(.dashboard-layout) .form-group textarea:focus {
     padding: 0.5rem 1rem;
     font-size: 0.9375rem;
     font-family: inherit;
-    color: var(--text-muted);
-    background: transparent;
-    border: none;
+    color: var(--primary);
+    background: #ffffff;
+    border: 1px solid rgba(74, 144, 217, 0.3);
+    border-radius: 8px;
     cursor: pointer;
     text-decoration: none;
 }
 
 .btn-secondary:hover {
-    color: var(--primary);
+    background: rgba(74, 144, 217, 0.06);
 }
 
 .btn-hero {
     display: inline-block;
-    padding: 1rem 2rem;
+    padding: 1rem 2.25rem;
     font-size: 1.125rem;
     font-weight: 500;
     font-family: inherit;
     color: #fff;
     background: var(--primary);
     border: none;
-    border-radius: 10px;
+    border-radius: 999px;
     cursor: pointer;
     text-align: center;
     text-decoration: none;
     box-sizing: border-box;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
 }
 
 .btn-hero:hover {
     background: var(--primary-hover);
     color: #fff;
+    transform: scale(1.03);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+}
+
+.btn-hero:active {
+    transform: scale(0.98);
 }
 
 .btn-primary-inline {
@@ -349,9 +429,9 @@ body:not(.dashboard-layout) .form-group textarea:focus {
 /* ── Team cards (dashboard grid) ── */
 .team-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem;
-    margin-top: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.75rem;
 }
 
 .team-card-link {
@@ -366,13 +446,13 @@ body:not(.dashboard-layout) .form-group textarea:focus {
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: 1.25rem;
-    transition: box-shadow 0.2s ease;
     height: 100%;
     box-sizing: border-box;
 }
 
 .team-card:hover {
     box-shadow: var(--shadow-card);
+    transform: translateY(-2px);
 }
 
 .team-card .team-name {
@@ -386,6 +466,186 @@ body:not(.dashboard-layout) .form-group textarea:focus {
     font-size: 0.875rem;
     color: var(--text-muted);
     margin: 0;
+}
+
+/* Dashboard: My Teams */
+.page-header-dashboard {
+    margin-bottom: 1.5rem;
+}
+
+.page-title-large {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.my-teams-grid {
+    justify-items: stretch;
+}
+
+.team-card-dashboard {
+    min-height: 180px;
+    padding: 1.5rem 1.5rem 1.25rem;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    animation: card-fade-up 0.35s ease-out forwards;
+}
+
+.team-card-accent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #4A90D9, #6BB4FF);
+}
+
+.team-card-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
+
+.team-name-large {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.team-meta-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.team-meta-inline i {
+    font-size: 1rem;
+}
+
+.team-card-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.75rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    border-radius: 999px;
+    border: 1px solid rgba(74, 144, 217, 0.35);
+    background: #ffffff;
+    color: #4A90D9;
+    cursor: pointer;
+    position: relative;
+}
+
+.team-card-copy:hover {
+    background: rgba(74, 144, 217, 0.06);
+}
+
+.team-card-copy-tooltip {
+    position: absolute;
+    top: -1.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111827;
+    color: #ffffff;
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.team-card-copy-tooltip.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-2px);
+}
+
+/* Create/Join CTA card */
+.team-card-cta {
+    border: 2px dashed rgba(148, 163, 184, 0.8);
+    background: #f9fafb;
+}
+
+.team-card-cta-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    gap: 0.5rem;
+}
+
+.team-card-cta-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4A90D9;
+    background: #ffffff;
+}
+
+.team-card-cta-text {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.team-card-cta:hover {
+    border-style: solid;
+    background: #eef4ff;
+}
+
+.team-card-cta-large {
+    min-height: 220px;
+}
+
+/* Dashboard empty state */
+.dashboard-empty {
+    text-align: center;
+    padding: 3rem 1rem 1rem;
+}
+
+.dashboard-empty-illustration {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.dashboard-empty-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+}
+
+.dashboard-empty-subtitle {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+}
+
+.dashboard-empty-grid {
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+@keyframes card-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .invite-code {
@@ -517,6 +777,17 @@ body:not(.dashboard-layout) .form-group textarea:focus {
     padding: 1.5rem;
     text-align: left;
     margin: 0;
+}
+
+.empty-state-compact {
+    padding: 1.5rem 0.75rem;
+    text-align: center;
+}
+
+.empty-state-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-muted);
 }
 
 .invite-line {
@@ -683,15 +954,29 @@ body:has(.team-dash-wrapper) {
     justify-content: space-between;
     padding: 0 1.5rem;
     background: #fff;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
     z-index: 80;
 }
 
 .team-topbar-name {
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 1.35rem;
+    font-weight: 700;
     color: var(--text);
+}
+
+.team-topbar-crumb-root {
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.team-topbar-crumb-separator {
+    margin: 0 0.35rem;
+    color: var(--text-muted);
+}
+
+.team-topbar-crumb-leaf {
+    font-weight: 700;
 }
 
 .team-topbar-right {
@@ -704,14 +989,19 @@ body:has(.team-dash-wrapper) {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #4A90D9;
+    background: radial-gradient(circle at 30% 0, #6BB4FF, #4A90D9);
     color: #fff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
     font-size: 0.875rem;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.team-profile-circle:hover {
+    box-shadow: 0 0 0 4px rgba(74, 144, 217, 0.28);
+    transform: scale(1.05);
 }
 
 .team-topbar-logout {
@@ -731,7 +1021,7 @@ body:has(.team-dash-wrapper) {
     top: 0;
     height: 100vh;
     width: 280px;
-    background: #1a1a2e;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16163a 100%);
     color: #fff;
     z-index: 90;
     overflow-y: auto;
@@ -768,7 +1058,8 @@ body:has(.team-dash-wrapper) {
     text-decoration: none;
     font-weight: 600;
     font-size: 1rem;
-    transition: background 0.2s ease, color 0.2s ease;
+    border-left: 3px solid transparent;
+    transition: background 0.2s ease, color 0.2s ease, border-left-color 0.2s ease;
 }
 
 .team-sidebar-home:hover {
@@ -777,9 +1068,10 @@ body:has(.team-dash-wrapper) {
 }
 
 .team-sidebar-home.active {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.10);
     color: #fff;
     font-weight: 600;
+    border-left-color: #4A90D9;
 }
 
 .team-sidebar-home i {
@@ -798,7 +1090,22 @@ body:has(.team-dash-wrapper) {
     color: #e2e8f0;
     text-decoration: none;
     font-size: 0.9375rem;
-    transition: background 0.2s ease, color 0.2s ease;
+    border-left: 3px solid transparent;
+    transition: background 0.2s ease, color 0.2s ease, border-left-color 0.2s ease;
+}
+
+.team-sidebar-count {
+    margin-left: 0.35rem;
+    font-size: 0.8125rem;
+    color: #cbd5f5;
+}
+
+.team-sidebar-count::before {
+    content: " (";
+}
+
+.team-sidebar-count::after {
+    content: ")";
 }
 
 .team-sidebar-link:hover {
@@ -810,6 +1117,7 @@ body:has(.team-dash-wrapper) {
     background: rgba(255, 255, 255, 0.12);
     color: #fff;
     font-weight: 600;
+    border-left-color: #4A90D9;
 }
 
 .team-sidebar-footer {
@@ -817,23 +1125,11 @@ body:has(.team-dash-wrapper) {
     bottom: 1rem;
     left: 0;
     right: 0;
-    padding: 0 1rem;
+    padding: 0;
 }
 
 .team-sidebar-settings {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    color: #94a3b8;
-    text-decoration: none;
-    border-radius: 8px;
-}
-
-.team-sidebar-settings:hover {
-    color: #e2e8f0;
-    background: rgba(255, 255, 255, 0.08);
+    margin-top: 0.25rem;
 }
 
 .team-dash-main {
@@ -867,7 +1163,7 @@ body:has(.team-dash-wrapper) {
 }
 
 .team-dash-right-col {
-    width: 300px;
+    width: 340px;
     flex-shrink: 0;
     height: calc(100vh - 50px);
     background: #fff;
@@ -925,6 +1221,14 @@ body:has(.team-dash-wrapper) {
 
 .team-right-box-plus:hover {
     background: rgba(74, 144, 217, 0.12);
+}
+
+.team-right-box-plus i {
+    transition: transform 0.2s ease;
+}
+
+.team-right-box-plus:hover i {
+    transform: rotate(90deg);
 }
 
 .team-right-box-inner {
@@ -1285,6 +1589,8 @@ body:has(.team-dash-wrapper) {
     grid-auto-rows: minmax(0, 1fr);
     gap: 2px;
     min-height: 0;
+    height: 100%;
+    align-content: stretch;
 }
 
 .calendar-section-fill .calendar-day {
@@ -1445,8 +1751,7 @@ body:has(.team-dash-wrapper) {
 }
 
 .calendar-day:not(.calendar-day-empty):hover {
-    background: #e2e8f0;
-    transition: background 0.2s ease;
+    background: #e3f0ff;
 }
 
 .calendar-day-empty {
@@ -1455,13 +1760,20 @@ body:has(.team-dash-wrapper) {
 }
 
 .calendar-day-today {
-    background: #4A90D9;
-    color: #fff;
+    background: #f0f5ff;
+    color: inherit;
     font-weight: 600;
 }
 
-.calendar-day-today:hover {
-    background: #357abd;
+.calendar-day-today .calendar-day-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: #4A90D9;
+    color: #fff;
 }
 
 .calendar-day-has-activity,
@@ -1488,6 +1800,16 @@ body:has(.team-dash-wrapper) {
 
 .calendar-dot:only-child {
     margin: 0;
+}
+
+.calendar-preview {
+    margin-top: 2px;
+    font-size: 0.625rem;
+    line-height: 1.2;
+    color: var(--text-muted);
+    max-height: 2.4em;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ── Announcements ── */

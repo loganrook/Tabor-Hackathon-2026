@@ -1,12 +1,14 @@
-{# _team_topbar.html — Universal top bar: contextual title left, profile circle + Log out right. #}
+{# _team_topbar.html — Universal top bar: contextual breadcrumb left, profile circle + Log out right. #}
 <header class="team-topbar">
     <h1 class="team-topbar-name">
         {% if team is defined %}
-            {{ team.name }}
+            <span class="team-topbar-crumb-root">GamePlan</span>
+            <span class="team-topbar-crumb-separator">›</span>
+            <span class="team-topbar-crumb-leaf">{{ team.name }}</span>
         {% elif request.endpoint == 'dashboard' %}
-            My Teams
+            GamePlan
         {% else %}
-            CoachHub
+            GamePlan
         {% endif %}
     </h1>
     <div class="team-topbar-right">
