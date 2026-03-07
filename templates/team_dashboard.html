@@ -9,25 +9,37 @@
 
 <div class="team-dash-layout">
     <div class="team-dash-left">
-        <section class="calendar-section">
-            <h2 class="section-heading">{{ cal_month_name }} {{ cal_year }}</h2>
-            <div class="calendar-grid">
-                <div class="calendar-weekdays">
-                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-                </div>
-                <div class="calendar-days">
-                    {% for i in range(first_weekday) %}
-                    <div class="calendar-day calendar-day-empty"></div>
-                    {% endfor %}
-                    {% for day in range(1, days_in_month + 1) %}
-                    <div class="calendar-day {{ 'calendar-day-today' if day == cal_today else '' }} {{ 'calendar-day-has-due' if day in assignment_due_days else '' }}">
-                        <span class="calendar-day-num">{{ day }}</span>
-                        {% if day in assignment_due_days %}
-                        <span class="calendar-dot"></span>
-                        {% endif %}
+        <section class="calendar-section" id="calendar-section">
+            <div class="calendar-header">
+                <button type="button" class="calendar-nav" id="calendar-prev" aria-label="Previous month">‹</button>
+                <h2 class="section-heading calendar-month-title" id="calendar-month-title">{{ cal_month_name }} {{ cal_year }}</h2>
+                <button type="button" class="calendar-nav" id="calendar-next" aria-label="Next month">›</button>
+            </div>
+            <div class="calendar-view" id="calendar-view">
+                <div class="calendar-grid">
+                    <div class="calendar-weekdays">
+                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
                     </div>
-                    {% endfor %}
+                    <div class="calendar-days" id="calendar-days">
+                        {% for i in range(first_weekday) %}
+                        <div class="calendar-day calendar-day-empty"></div>
+                        {% endfor %}
+                        {% for day in range(1, days_in_month + 1) %}
+                        <div class="calendar-day {{ 'calendar-day-today' if day == cal_today else '' }} {{ 'calendar-day-has-activity' if day in assignment_due_days else '' }}" data-year="{{ cal_year }}" data-month="{{ cal_month }}" data-day="{{ day }}">
+                            <span class="calendar-day-num">{{ day }}</span>
+                            {% if day in assignment_due_days %}
+                            <span class="calendar-dot"></span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
+            </div>
+            <div class="calendar-day-view hidden" id="calendar-day-view">
+                <h2 class="section-heading calendar-day-view-title" id="calendar-day-view-title"></h2>
+                <button type="button" class="btn-secondary back-to-calendar" id="back-to-calendar">← Back to calendar</button>
+                <div class="calendar-day-assignments" id="calendar-day-assignments"></div>
+                <div class="calendar-day-announcements" id="calendar-day-announcements"></div>
             </div>
         </section>
     </div>
@@ -107,4 +119,22 @@
     </p>
 </section>
 
+<script>
+(function() {
+    window.CALENDAR_DATA = {
+        today: "{{ cal_year }}-{% if cal_month < 10 %}0{% endif %}{{ cal_month }}-{% if cal_today < 10 %}0{% endif %}{{ cal_today }}",
+        assignments: [
+            {% for a in assignments %}
+            { "id": {{ a.id }}, "title": {{ a.title|tojson }}, "description": {{ (a.description or '')|tojson }}, "due_date": {% if a.due_date %}"{{ a.due_date.strftime('%Y-%m-%d') }}"{% else %}null{% endif %}, "due_display": {% if a.due_date %}{{ a.due_date.strftime('%b %d, %Y at %H:%M')|tojson }}{% else %}null{% endif %} }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ],
+        announcements: [
+            {% for ann in announcements %}
+            { "content": {{ ann.content|tojson }}, "created_at": {% if ann.created_at %}"{{ ann.created_at.isoformat() }}"{% else %}null{% endif %} }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]
+    };
+})();
+</script>
+<script src="{{ url_for('static', filename='team_calendar.js') }}"></script>
 {% endblock %}
