@@ -19,14 +19,16 @@
 <div class="row g-3 mb-4">
     {% for team in teams %}
     <div class="col-md-6 col-lg-4">
-        <div class="card team-card h-100">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-flag-fill text-primary"></i> {{ team.name }}</h5>
-                <p class="mb-0 text-muted small">
-                    <i class="bi bi-person"></i> Coach: {{ team.coach.name }}
-                </p>
+        <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-card-link">
+            <div class="card team-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-flag-fill text-primary"></i> {{ team.name }}</h5>
+                    <p class="mb-0 text-muted small">
+                        <i class="bi bi-person"></i> Coach: {{ team.coach.name }}
+                    </p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     {% endfor %}
 </div>

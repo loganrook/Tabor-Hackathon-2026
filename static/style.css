@@ -99,6 +99,18 @@ body {
     color: var(--brand-dark);
 }
 
+/* Wrapper link so the whole card is clickable */
+.team-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.team-card-link:hover {
+    color: inherit;
+}
+
 .team-card {
     background: #fff;
     border: none;
