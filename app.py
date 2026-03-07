@@ -388,38 +388,48 @@ def create_app(config_class=Config):
             cal_month_name=cal_module.month_name[cal_month],
         )
 
-    @app.route("/team/<int:team_id>/announce", methods=["POST"])
+    @app.route("/team/<int:team_id>/announcement/create", methods=["GET", "POST"])
     @login_required
-    def team_announce(team_id):
-        """Coach only: create an announcement for the team. Redirect to team dashboard."""
+    def create_team_announcement(team_id):
+        """Coach only: show form (GET) or create announcement (POST). Same pattern as create assignment."""
         team = Team.query.get_or_404(team_id)
         if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
             flash("You cannot post announcements for this team.", "error")
             return redirect(url_for("dashboard"))
-        content = request.form.get("content", "").strip()
-        announce_to = request.form.get("announce_to", "").strip()
-        group_id = None
-        if not content:
-            flash("Announcement cannot be empty.", "error")
+        if request.method == "POST":
+            content = request.form.get("content", "").strip()
+            announce_to = request.form.get("announce_to", "").strip()
+            group_id = None
+            if not content:
+                flash("Announcement cannot be empty.", "error")
+                return render_template(
+                    "create_announcement.html",
+                    team=team,
+                    groups=team.groups.order_by(Group.name).all(),
+                )
+            if announce_to.startswith("g"):
+                try:
+                    raw_id = int(announce_to[1:])
+                    group = Group.query.filter_by(id=raw_id, team_id=team_id).first()
+                    if group:
+                        group_id = group.id
+                except (TypeError, ValueError):
+                    group_id = None
+            ann = Announcement(
+                content=content,
+                team_id=team_id,
+                group_id=group_id,
+                created_by=current_user.id,
+            )
+            db.session.add(ann)
+            db.session.commit()
+            flash("Announcement posted.", "success")
             return redirect(url_for("team_dashboard", team_id=team_id))
-        if announce_to.startswith("g"):
-            try:
-                raw_id = int(announce_to[1:])
-                group = Group.query.filter_by(id=raw_id, team_id=team_id).first()
-                if group:
-                    group_id = group.id
-            except (TypeError, ValueError):
-                group_id = None
-        ann = Announcement(
-            content=content,
-            team_id=team_id,
-            group_id=group_id,
-            created_by=current_user.id,
+        return render_template(
+            "create_announcement.html",
+            team=team,
+            groups=team.groups.order_by(Group.name).all(),
         )
-        db.session.add(ann)
-        db.session.commit()
-        flash("Announcement posted.", "success")
-        return redirect(url_for("team_dashboard", team_id=team_id))
 
     @app.route("/team/<int:team_id>/group/create", methods=["GET", "POST"])
     @login_required

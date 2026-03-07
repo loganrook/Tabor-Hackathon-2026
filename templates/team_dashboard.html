@@ -57,24 +57,9 @@
                     <div class="team-right-box-header">
                         <h2 class="team-right-box-title">Announcements</h2>
                         {% if is_coach %}
-                        <button type="button" class="team-right-box-plus" id="announce-plus" aria-label="Post announcement"><i class="bi bi-plus-lg"></i></button>
+                        <a href="{{ url_for('create_team_announcement', team_id=team.id) }}" class="team-right-box-plus" aria-label="Post announcement"><i class="bi bi-plus-lg"></i></a>
                         {% endif %}
                     </div>
-                    {% if is_coach %}
-                    <form action="{{ url_for('team_announce', team_id=team.id) }}" method="post" class="announce-form announce-form-collapsed" id="announce-form">
-                        <textarea id="announce_content" name="content" rows="2" placeholder="Write something..."></textarea>
-                        <div class="form-group">
-                            <label for="announce_to">Audience</label>
-                            <select id="announce_to" name="announce_to">
-                                <option value="">Entire Team</option>
-                                {% for g in groups %}
-                                <option value="g{{ g.id }}">{{ g.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <button type="submit" class="btn-primary btn-primary-inline btn-small">Post</button>
-                    </form>
-                    {% endif %}
                     <div class="team-right-box-inner">
                         {% if announcements %}
                         <div class="announcement-list">
@@ -185,13 +170,6 @@
 (function() {
     var sidebar = document.getElementById('team-sidebar');
     var sidebarToggle = document.getElementById('sidebar-toggle');
-    var announcePlus = document.getElementById('announce-plus');
-    var announceForm = document.getElementById('announce-form');
-    if (announcePlus && announceForm) {
-        announcePlus.addEventListener('click', function() {
-            announceForm.classList.toggle('announce-form-collapsed');
-        });
-    }
     if (sidebarToggle && sidebar) {
         sidebarToggle.addEventListener('click', function() {
             sidebar.classList.toggle('open');
