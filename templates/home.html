@@ -1,19 +1,80 @@
-{# home.html — Minimal landing: title, tagline, Log In / Sign Up only. #}
+{# home.html — Landing: title, tagline, Log In / Sign Up. Auth cards slide in without navigation so mosaic keeps scrolling. #}
 {% extends "base.html" %}
 {% block title %}RepRoom{% endblock %}
 
 {% block content %}
-<div class="landing-root">
+<div class="landing-root" id="landing-root">
     {% include "_landing_mosaic.html" %}
 
-    <!-- Fixed, centered hero content -->
     <main class="landing-hero landing-hero-fixed">
         <div class="landing-hero-inner">
-            <h1 class="landing-title">RepRoom</h1>
-            <p class="landing-tagline">Workouts. Schedules. Communication. All in one place.</p>
-            <div class="landing-actions">
-                <a href="{{ url_for('login') }}" class="btn-landing btn-landing-secondary">Log In</a>
-                <a href="{{ url_for('register') }}" class="btn-landing btn-landing-primary">Sign Up</a>
+            {# Hero: visible by default; hidden when a panel is shown #}
+            <div class="landing-hero-content" id="landing-hero-content">
+                <h1 class="landing-title">RepRoom</h1>
+                <p class="landing-tagline">Workouts. Schedules. Communication. All in one place.</p>
+                <div class="landing-actions">
+                    <a href="{{ url_for('login') }}" class="btn-landing btn-landing-secondary" id="landing-btn-login" data-landing-panel="login">Log In</a>
+                    <a href="{{ url_for('register') }}" class="btn-landing btn-landing-primary" id="landing-btn-signup" data-landing-panel="register">Sign Up</a>
+                </div>
+            </div>
+
+            {# Login panel: shown in-place so mosaic never stops #}
+            <div class="landing-auth-panel landing-auth-panel-login" id="landing-panel-login" aria-hidden="true">
+                <div class="auth-card landing-auth-card">
+                    <a href="#" class="landing-back-link" data-landing-back aria-label="Back to home">← Back</a>
+                    <h1>Log in</h1>
+                    <form action="{{ url_for('login') }}" method="post">
+                        <div class="form-group">
+                            <label for="landing-login-email">Email</label>
+                            <input type="email" id="landing-login-email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="landing-login-password">Password</label>
+                            <input type="password" id="landing-login-password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Log in</button>
+                    </form>
+                    <p class="auth-footer">Don't have an account? <a href="#" data-landing-panel="register">Sign up</a></p>
+                </div>
+            </div>
+
+            {# Register panel #}
+            <div class="landing-auth-panel landing-auth-panel-register" id="landing-panel-register" aria-hidden="true">
+                <div class="auth-card landing-auth-card">
+                    <a href="#" class="landing-back-link" data-landing-back aria-label="Back to home">← Back</a>
+                    <h1>Create account</h1>
+                    <form action="{{ url_for('register') }}" method="post">
+                        <div class="form-group">
+                            <label for="landing-register-name">Name</label>
+                            <input type="text" id="landing-register-name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="landing-register-email">Email</label>
+                            <input type="email" id="landing-register-email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="landing-register-password">Password</label>
+                            <input type="password" id="landing-register-password" name="password" required autocomplete="new-password">
+                            <ul class="password-requirements" id="landing-password-requirements" aria-live="polite">
+                                <li id="landing-req-length"><span class="req-icon" aria-hidden="true"></span> At least 8 characters</li>
+                                <li id="landing-req-upper"><span class="req-icon" aria-hidden="true"></span> At least one uppercase letter</li>
+                                <li id="landing-req-lower"><span class="req-icon" aria-hidden="true"></span> At least one lowercase letter</li>
+                                <li id="landing-req-number"><span class="req-icon" aria-hidden="true"></span> At least one number</li>
+                            </ul>
+                        </div>
+                        <div class="form-group">
+                            <label>I am a…</label>
+                            <div class="role-toggle">
+                                <input type="radio" name="role" id="landing-role-coach" value="coach" {{ 'checked' if (role_param|default('coach')) == 'coach' else '' }}>
+                                <label for="landing-role-coach">Coach</label>
+                                <input type="radio" name="role" id="landing-role-athlete" value="athlete" {{ 'checked' if role_param == 'athlete' else '' }}>
+                                <label for="landing-role-athlete">Athlete</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">Create account</button>
+                    </form>
+                    <p class="auth-footer">Already have an account? <a href="#" data-landing-panel="login">Log in</a></p>
+                </div>
             </div>
         </div>
     </main>
@@ -24,5 +85,51 @@
 {{ super() }}
 <script>
 document.body.classList.add('home-landing');
+
+(function() {
+    var root = document.getElementById('landing-root');
+    var heroContent = document.getElementById('landing-hero-content');
+    var panelLogin = document.getElementById('landing-panel-login');
+    var panelRegister = document.getElementById('landing-panel-register');
+
+    function showPanel(panelName) {
+        if (!root) return;
+        root.setAttribute('data-landing-panel', panelName || '');
+        root.classList.remove('landing-show-login', 'landing-show-register');
+        if (panelName === 'login') {
+            root.classList.add('landing-show-login');
+            if (panelLogin) panelLogin.setAttribute('aria-hidden', 'false');
+            if (panelRegister) panelRegister.setAttribute('aria-hidden', 'true');
+        } else if (panelName === 'register') {
+            root.classList.add('landing-show-register');
+            if (panelRegister) panelRegister.setAttribute('aria-hidden', 'false');
+            if (panelLogin) panelLogin.setAttribute('aria-hidden', 'true');
+        } else {
+            if (panelLogin) panelLogin.setAttribute('aria-hidden', 'true');
+            if (panelRegister) panelRegister.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    function handlePanelClick(e) {
+        var target = e.target.closest('[data-landing-panel]');
+        if (!target) return;
+        var panel = target.getAttribute('data-landing-panel');
+        if (panel === 'login' || panel === 'register') {
+            e.preventDefault();
+            showPanel(panel);
+        }
+    }
+
+    function handleBackClick(e) {
+        if (!e.target.closest('[data-landing-back]')) return;
+        e.preventDefault();
+        showPanel(null);
+    }
+
+    root.addEventListener('click', function(e) {
+        handlePanelClick(e);
+        handleBackClick(e);
+    });
+})();
 </script>
 {% endblock %}

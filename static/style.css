@@ -3260,6 +3260,69 @@ body.home-landing .app-container {
 .landing-hero-inner {
     text-align: center;
     max-width: 640px;
+    position: relative;
+}
+
+/* Hero title + buttons: visible by default; fade out when auth panel is shown */
+.landing-hero-content {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Auth panels (login/register): in-place so mosaic keeps scrolling */
+.landing-auth-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+
+.landing-auth-panel .landing-auth-card {
+    transform: translateY(14px);
+    transition: transform 0.35s ease;
+}
+
+.landing-root.landing-show-login .landing-hero-content,
+.landing-root.landing-show-register .landing-hero-content {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.landing-root.landing-show-login .landing-auth-panel-login,
+.landing-root.landing-show-register .landing-auth-panel-register {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.landing-root.landing-show-login .landing-auth-panel-login .landing-auth-card,
+.landing-root.landing-show-register .landing-auth-panel-register .landing-auth-card {
+    transform: translateY(0);
+}
+
+/* Auth card on home landing: match login/register page style */
+body.home-landing .landing-auth-card {
+    border-radius: var(--radius-saas);
+    box-shadow: var(--shadow-saas);
+}
+
+.landing-back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.landing-back-link:hover {
+    color: var(--primary);
 }
 
 @keyframes landing-hero-fade {
