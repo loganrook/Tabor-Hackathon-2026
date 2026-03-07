@@ -17,6 +17,11 @@
                     <li class="roster-page-item">
                         <span class="roster-page-name">{{ a.name }}</span>
                         <span class="roster-page-email">{{ a.email }}</span>
+                        {% if athlete_groups.get(a.id) %}
+                        <span class="roster-page-groups">{{ athlete_groups[a.id]|join(', ') }}</span>
+                        {% else %}
+                        <span class="roster-page-groups text-muted">—</span>
+                        {% endif %}
                         {% if is_coach %}
                         <form action="{{ url_for('roster_remove', team_id=team.id) }}" method="post" class="roster-remove-form" onsubmit="return confirm('Remove {{ a.name }} from the team?');">
                             <input type="hidden" name="athlete_id" value="{{ a.id }}">

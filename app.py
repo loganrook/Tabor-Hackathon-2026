@@ -530,10 +530,16 @@ def create_app(config_class=Config):
             return redirect(url_for("dashboard"))
         athletes = team.athletes.all()
         is_coach = isinstance(current_user, Coach) and team.coach_id == current_user.id
+        # Each athlete's groups for this team (for roster display)
+        athlete_groups = {
+            a.id: [g.name for g in a.groups.filter(Group.team_id == team_id).all()]
+            for a in athletes
+        }
         return render_template(
             "team_roster.html",
             team=team,
             athletes=athletes,
+            athlete_groups=athlete_groups,
             is_coach=is_coach,
         )
 
