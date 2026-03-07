@@ -3307,6 +3307,7 @@ body.home-landing .app-container {
     transform: translateY(0);
 }
 
+/* Auth card on home landing: match login/register page style */
 body.home-landing .landing-auth-card {
     border-radius: var(--radius-saas);
     box-shadow: var(--shadow-saas);
