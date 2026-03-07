@@ -16,10 +16,19 @@
         </tr>
     </thead>
     <tbody>
-        <!-- TODO: {% for athlete in athletes %} ... {% endfor %} -->
+        {% if athletes %}
+        {% for athlete in athletes %}
+        <tr>
+            <td>{{ athlete.name }}</td>
+            <td>{{ athlete.email }}</td>
+            <td>—</td>
+        </tr>
+        {% endfor %}
+        {% else %}
         <tr>
             <td colspan="3">No athletes on roster.</td>
         </tr>
+        {% endif %}
     </tbody>
 </table>
 {% endblock %}

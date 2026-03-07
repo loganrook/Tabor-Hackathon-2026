@@ -80,8 +80,28 @@ def create_app(config_class=Config):
     @login_required
     def coach_dashboard():
         """Coach-only: roster overview and quick actions (e.g. add athlete)."""
-        # TODO: implement — ensure current_user is Coach, load roster summary
-        return render_template("coach_dashboard.html")
+        if not isinstance(current_user, Coach):
+            return redirect(url_for("athlete_dashboard"))
+        teams = current_user.teams.all()
+        return render_template("coach_dashboard.html", teams=teams)
+
+    @app.route("/team/create", methods=["GET", "POST"])
+    @login_required
+    def create_team():
+        """Show form to create team (GET) or create team and persist (POST)."""
+        if not isinstance(current_user, Coach):
+            return redirect(url_for("athlete_dashboard"))
+        if request.method == "POST":
+            name = request.form.get("name", "").strip()
+            if not name:
+                flash("Team name is required.", "error")
+                return render_template("team_create.html")
+            team = Team(name=name, coach_id=current_user.id)
+            db.session.add(team)
+            db.session.commit()
+            flash("Team created successfully.", "success")
+            return redirect(url_for("coach_dashboard"))
+        return render_template("team_create.html")
 
     @app.route("/athlete/dashboard")
     @login_required
@@ -94,18 +114,41 @@ def create_app(config_class=Config):
     @login_required
     def roster():
         """List athletes for the current coach/context."""
-        # TODO: implement — filter by current_user (coach), pass athletes to template
-        return render_template("roster.html")
+        if not isinstance(current_user, Coach):
+            return redirect(url_for("athlete_dashboard"))
+        team_ids = [t.id for t in current_user.teams.all()]
+        athletes = Athlete.query.filter(Athlete.team_id.in_(team_ids)).all() if team_ids else []
+        return render_template("roster.html", athletes=athletes)
 
     @app.route("/roster/add", methods=["GET", "POST"])
     @login_required
     def add_athlete():
         """Show form to add athlete (GET) or create athlete and persist (POST)."""
-        # TODO: implement — validate form, create Athlete, redirect to roster or coach_dashboard
+        if not isinstance(current_user, Coach):
+            return redirect(url_for("athlete_dashboard"))
+        teams = current_user.teams.all()
         if request.method == "POST":
-            flash("Add athlete not implemented yet.", "info")
+            name = request.form.get("name", "").strip()
+            email = request.form.get("email", "").strip()
+            password = request.form.get("password", "")
+            team_id = request.form.get("team_id", type=int)
+            if not name or not email or not password or not team_id:
+                flash("Name, email, password, and team are required.", "error")
+                return render_template("add_athlete.html", teams=teams)
+            team = Team.query.get(team_id)
+            if not team or team.coach_id != current_user.id:
+                flash("Invalid team.", "error")
+                return render_template("add_athlete.html", teams=teams)
+            if Athlete.query.filter_by(email=email).first():
+                flash("An athlete with that email already exists.", "error")
+                return render_template("add_athlete.html", teams=teams)
+            athlete = Athlete(name=name, email=email, team_id=team_id)
+            athlete.set_password(password)
+            db.session.add(athlete)
+            db.session.commit()
+            flash("Athlete added successfully.", "success")
             return redirect(url_for("roster"))
-        return redirect(url_for("coach_dashboard"))
+        return render_template("add_athlete.html", teams=teams)
 
     with app.app_context():
         db.create_all()

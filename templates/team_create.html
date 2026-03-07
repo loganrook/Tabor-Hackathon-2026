@@ -1,0 +1,16 @@
+{# team_create.html — Create team form (coach only).
+   Purpose: Form to create a new team with a name.
+   Who works here: Frontend.
+   Responsibilities: Form posts to create_team route. #}
+{% extends "base.html" %}
+{% block title %}Create Team — Coach–Athlete App{% endblock %}
+
+{% block content %}
+<h1>Create Team</h1>
+<form action="{{ url_for('create_team') }}" method="post" class="team-create-form">
+    <label for="name">Team name</label>
+    <input type="text" id="name" name="name" required>
+    <button type="submit">Create team</button>
+</form>
+<p><a href="{{ url_for('coach_dashboard') }}">Back to dashboard</a></p>
+{% endblock %}
