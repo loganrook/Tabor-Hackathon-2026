@@ -191,6 +191,40 @@ class Announcement(db.Model):
     )
 
 
+class DirectMessage(db.Model):
+    """Direct message between a coach and an athlete for a specific team."""
+
+    __tablename__ = "direct_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
+    coach_id = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
+    athlete_id = db.Column(db.Integer, db.ForeignKey("athletes.id"), nullable=False)
+    sender_role = db.Column(db.String(16), nullable=False)  # 'coach' or 'athlete'
+    reason = db.Column(db.String(50), nullable=True)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=_local_now)
+    read_by_coach = db.Column(db.Boolean, default=False)
+    read_by_athlete = db.Column(db.Boolean, default=False)
+    resolved = db.Column(db.Boolean, default=False)
+
+    team = db.relationship(
+        "Team",
+        backref=db.backref("direct_messages", lazy="dynamic"),
+        foreign_keys="DirectMessage.team_id",
+    )
+    coach = db.relationship(
+        "Coach",
+        backref=db.backref("direct_messages", lazy="dynamic"),
+        foreign_keys="DirectMessage.coach_id",
+    )
+    athlete = db.relationship(
+        "Athlete",
+        backref=db.backref("direct_messages", lazy="dynamic"),
+        foreign_keys="DirectMessage.athlete_id",
+    )
+
+
 class WorkoutTemplate(db.Model):
     """Saved workout template in a coach's library (not tied to a team)."""
 

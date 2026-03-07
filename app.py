@@ -28,6 +28,7 @@ from models import (  # noqa: E402, F401
     Workout,
     Exercise,
     ExerciseStatus,
+    DirectMessage,
 )
 
 # In-memory rate limit for failed logins: ip -> (attempt_count, block_until_timestamp)
@@ -74,6 +75,20 @@ def create_app(config_class=Config):
         if prefix == "athlete":
             return Athlete.query.get(pk)
         return None
+
+    @app.context_processor
+    def inject_unread_dm_count():
+        """Inject unread direct message count for coaches into all templates."""
+        unread_dm_count = 0
+        if current_user.is_authenticated and isinstance(current_user, Coach):
+            unread_dm_count = (
+                DirectMessage.query.filter_by(
+                    coach_id=current_user.id,
+                    sender_role="athlete",
+                    read_by_coach=False,
+                ).count()
+            )
+        return {"unread_dm_count": unread_dm_count}
 
     def _user_can_access_team(team):
         """Return True if current_user is a coach (head or joined) on this team or an athlete in it."""
@@ -623,6 +638,235 @@ def create_app(config_class=Config):
             athlete_groups=athlete_groups,
             is_coach=is_coach,
         )
+
+    @app.route("/team/<int:team_id>/messages", methods=["GET", "POST"])
+    @login_required
+    def team_messages(team_id):
+        """Athlete-only: direct messages with the team's coach."""
+        team = Team.query.get_or_404(team_id)
+        if not _user_can_access_team(team) or not isinstance(current_user, Athlete):
+            flash("You cannot view messages for this team.", "error")
+            return redirect(url_for("dashboard"))
+        coach = team.coach
+        if request.method == "POST":
+            body = request.form.get("body", "").strip()
+            reason = request.form.get("reason", "").strip() or None
+            if not body:
+                flash("Message cannot be empty.", "error")
+                return redirect(url_for("team_messages", team_id=team_id))
+            dm = DirectMessage(
+                team_id=team.id,
+                coach_id=coach.id,
+                athlete_id=current_user.id,
+                sender_role="athlete",
+                reason=reason,
+                body=body,
+                read_by_coach=False,
+                read_by_athlete=True,
+                resolved=False,
+            )
+            db.session.add(dm)
+            db.session.commit()
+            flash("Message sent to your coach.", "success")
+            return redirect(url_for("team_messages", team_id=team_id))
+
+        # Thread: all messages between this athlete and the team's coach
+        thread_messages = (
+            DirectMessage.query.filter_by(
+                team_id=team.id,
+                coach_id=coach.id,
+                athlete_id=current_user.id,
+            )
+            .order_by(DirectMessage.created_at.asc())
+            .all()
+        )
+        # Mark coach-sent messages as read by athlete
+        updated = False
+        for msg in thread_messages:
+            if msg.sender_role == "coach" and not msg.read_by_athlete:
+                msg.read_by_athlete = True
+                updated = True
+        if updated:
+            db.session.commit()
+        return render_template(
+            "team_messages.html",
+            team=team,
+            coach=coach,
+            athlete=current_user,
+            messages=thread_messages,
+            is_coach=False,
+        )
+
+    @app.route("/coach/messages")
+    @login_required
+    def coach_inbox():
+        """Coach inbox: grouped direct messages from athletes across teams."""
+        if not isinstance(current_user, Coach):
+            flash("Only coaches have an inbox.", "error")
+            return redirect(url_for("dashboard"))
+        # Fetch all messages for this coach
+        all_messages = (
+            DirectMessage.query.filter_by(coach_id=current_user.id)
+            .order_by(DirectMessage.created_at.desc())
+            .all()
+        )
+        threads = {}
+        for dm in all_messages:
+            key = (dm.team_id, dm.athlete_id)
+            thread = threads.get(key)
+            if thread is None:
+                thread = {
+                    "team": dm.team,
+                    "athlete": dm.athlete,
+                    "last_message": dm,
+                    "unread_count": 0,
+                    "resolved": dm.resolved,
+                }
+                threads[key] = thread
+            if dm.created_at and (
+                thread["last_message"] is None
+                or dm.created_at > thread["last_message"].created_at
+            ):
+                thread["last_message"] = dm
+                thread["resolved"] = dm.resolved
+            if dm.sender_role == "athlete" and not dm.read_by_coach:
+                thread["unread_count"] += 1
+        thread_list = []
+        for (team_id, athlete_id), data in threads.items():
+            athlete = data["athlete"]
+            team = data["team"]
+            group_names = [
+                g.name for g in athlete.groups.filter(Group.team_id == team_id).all()
+            ]
+            thread_list.append(
+                {
+                    "team": team,
+                    "athlete": athlete,
+                    "group_names": group_names,
+                    "last_message": data["last_message"],
+                    "unread_count": data["unread_count"],
+                    "resolved": data["resolved"],
+                }
+            )
+        # Apply filters
+        status = request.args.get("status", "").lower()
+        if status == "unread":
+            thread_list = [t for t in thread_list if t["unread_count"] > 0]
+        group_id = request.args.get("group", type=int)
+        if group_id:
+            thread_list = [
+                t
+                for t in thread_list
+                if any(g.id == group_id for g in t["athlete"].groups.all())
+            ]
+        date_str = request.args.get("date", "").strip()
+        if date_str:
+            try:
+                from datetime import datetime as _dt
+
+                target_date = _dt.strptime(date_str, "%Y-%m-%d").date()
+                thread_list = [
+                    t
+                    for t in thread_list
+                    if t["last_message"].created_at
+                    and t["last_message"].created_at.date() == target_date
+                ]
+            except ValueError:
+                pass
+        # Sort by latest activity
+        thread_list.sort(
+            key=lambda t: t["last_message"].created_at or datetime.min, reverse=True
+        )
+        return render_template("coach_inbox.html", threads=thread_list)
+
+    @app.route("/team/<int:team_id>/messages/<int:athlete_id>", methods=["GET", \"POST\"])
+    @login_required
+    def coach_thread(team_id, athlete_id):
+        \"\"\"Coach-only: conversation with a specific athlete for a team.\"\"\"
+        team = Team.query.get_or_404(team_id)
+        if not _is_head_coach(team):
+            flash(\"You cannot view messages for this team.\", \"error\")
+            return redirect(url_for(\"dashboard\"))
+        athlete = Athlete.query.get_or_404(athlete_id)
+        if not team.athletes.filter(Athlete.id == athlete.id).first():
+            flash(\"Athlete is not on this team.\", \"error\")
+            return redirect(url_for(\"dashboard\"))
+        if request.method == \"POST\":
+            body = request.form.get(\"body\", \"\").strip()
+            reason = request.form.get(\"reason\", \"\").strip() or None
+            if not body:
+                flash(\"Message cannot be empty.\", \"error\")
+                return redirect(
+                    url_for(\"coach_thread\", team_id=team_id, athlete_id=athlete_id)
+                )
+            dm = DirectMessage(
+                team_id=team.id,
+                coach_id=current_user.id,
+                athlete_id=athlete.id,
+                sender_role=\"coach\",
+                reason=reason,
+                body=body,
+                read_by_coach=True,
+                read_by_athlete=False,
+                resolved=False,
+            )
+            db.session.add(dm)
+            db.session.commit()
+            flash(\"Message sent.\", \"success\")
+            return redirect(
+                url_for(\"coach_thread\", team_id=team_id, athlete_id=athlete_id)
+            )
+
+        thread_messages = (
+            DirectMessage.query.filter_by(
+                team_id=team.id,
+                coach_id=current_user.id,
+                athlete_id=athlete.id,
+            )
+            .order_by(DirectMessage.created_at.asc())
+            .all()
+        )
+        updated = False
+        for msg in thread_messages:
+            if msg.sender_role == \"athlete\" and not msg.read_by_coach:
+                msg.read_by_coach = True
+                updated = True
+        if updated:
+            db.session.commit()
+        athlete_groups = [
+            g.name for g in athlete.groups.filter(Group.team_id == team.id).all()
+        ]
+        return render_template(
+            \"team_messages.html\",
+            team=team,
+            coach=current_user,
+            athlete=athlete,
+            athlete_groups=athlete_groups,
+            messages=thread_messages,
+            is_coach=True,
+        )
+
+    @app.route(\"/team/<int:team_id>/messages/<int:athlete_id>/resolve\", methods=[\"POST\"])
+    @login_required
+    def resolve_thread(team_id, athlete_id):
+        \"\"\"Coach-only: mark a conversation as resolved.\"\"\"
+        team = Team.query.get_or_404(team_id)
+        if not _is_head_coach(team):
+            flash(\"You cannot resolve messages for this team.\", \"error\")
+            return redirect(url_for(\"dashboard\"))
+        athlete = Athlete.query.get_or_404(athlete_id)
+        if not team.athletes.filter(Athlete.id == athlete.id).first():
+            flash(\"Athlete is not on this team.\", \"error\")
+            return redirect(url_for(\"dashboard\"))
+        thread_messages = DirectMessage.query.filter_by(
+            team_id=team.id, coach_id=current_user.id, athlete_id=athlete.id
+        ).all()
+        for msg in thread_messages:
+            msg.resolved = True
+        if thread_messages:
+            db.session.commit()
+            flash(\"Conversation marked as resolved.\", \"success\")
+        return redirect(url_for(\"coach_thread\", team_id=team_id, athlete_id=athlete_id))
 
     @app.route("/team/<int:team_id>/roster/remove", methods=["POST"])
     @login_required
