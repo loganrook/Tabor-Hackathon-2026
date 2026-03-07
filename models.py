@@ -142,9 +142,16 @@ class Announcement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
     created_at = db.Column(db.DateTime, default=_local_now)
     is_auto = db.Column(db.Boolean, default=False)
+
+    group = db.relationship(
+        "Group",
+        backref=db.backref("announcements", lazy="dynamic"),
+        foreign_keys="Announcement.group_id",
+    )
 
 
 class Assignment(db.Model):

@@ -23,6 +23,9 @@
             </div>
             <div class="team-sidebar-section">
                 <span class="team-sidebar-label">Groups</span>
+                {% if is_coach %}
+                <a href="{{ url_for('create_group', team_id=team.id) }}" class="team-sidebar-create">+ New group</a>
+                {% endif %}
                 <ul class="team-sidebar-groups">
                     <li><a href="#" class="team-filter-link active" data-group-id="">All</a></li>
                     {% for g in sidebar_groups %}
@@ -97,6 +100,15 @@
                     {% if is_coach %}
                     <form action="{{ url_for('team_announce', team_id=team.id) }}" method="post" class="announce-form announce-form-collapsed" id="announce-form">
                         <textarea id="announce_content" name="content" rows="2" placeholder="Write something..."></textarea>
+                        <div class="form-group">
+                            <label for="announce_to">Audience</label>
+                            <select id="announce_to" name="announce_to">
+                                <option value="">Entire Team</option>
+                                {% for g in groups %}
+                                <option value="g{{ g.id }}">{{ g.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         <button type="submit" class="btn-primary btn-primary-inline btn-small">Post</button>
                     </form>
                     {% endif %}
@@ -106,7 +118,13 @@
                             {% for ann in announcements %}
                             <div class="announcement-card {{ 'announcement-card-auto' if ann.is_auto else '' }}">
                                 <p class="announcement-content">{{ ann.content }}</p>
-                                <p class="announcement-meta">{{ ann.created_at.strftime('%b %d, %Y') if ann.created_at else '' }}</p>
+                                <p class="announcement-meta">
+                                    {% if ann.group_id and ann.group %}
+                                    {{ ann.group.name }} group · {{ ann.created_at|fmt_datetime }}
+                                    {% else %}
+                                    Entire Team · {{ ann.created_at|fmt_datetime }}
+                                    {% endif %}
+                                </p>
                                 {% if is_coach %}
                                 <div class="announcement-actions-hover">
                                     <a href="{{ url_for('edit_announcement', announcement_id=ann.id) }}" class="btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
