@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
     <h1>{{ team.name }}</h1>
-    <a href="{{ url_for('coach_dashboard') if is_coach else url_for('athlete_dashboard') }}" class="back-link">← Back to my teams</a>
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Back to my teams</a>
 </div>
 
 <div class="team-dash-layout">

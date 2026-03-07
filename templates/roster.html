@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
     <h1>Roster</h1>
-    <a href="{{ url_for('coach_dashboard') }}" class="back-link">← Dashboard</a>
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Dashboard</a>
 </div>
 
 {% if athletes %}
@@ -30,7 +30,7 @@
 {% else %}
 <div class="empty-state section">
     <p>No athletes on your roster yet. Share your team invite codes so athletes can join.</p>
-    <a href="{{ url_for('coach_dashboard') }}" class="back-link">← Dashboard</a>
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Dashboard</a>
 </div>
 {% endif %}
 {% endblock %}

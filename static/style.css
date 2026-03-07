@@ -121,8 +121,14 @@ body:not(.dashboard-layout) .auth-footer a {
     color: var(--primary);
 }
 
-.nav-minimal .nav-right a + a {
+.nav-minimal .nav-right a + a,
+.nav-minimal .nav-right .nav-user-name + a {
     margin-left: 1rem;
+}
+
+.nav-minimal .nav-user-name {
+    color: var(--text-muted);
+    font-size: 0.9375rem;
 }
 
 /* ── Flash banners ── */

@@ -1,4 +1,4 @@
-{# base.html — Dashboard layout when authenticated; minimal nav for public pages. #}
+{# base.html — Single navbar; all navigation from dashboard and team pages. #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,151 +9,33 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="{% if current_user.is_authenticated %}dashboard-layout{% endif %}">
-    {% if current_user.is_authenticated %}
-    <div class="dashboard-app">
-        {# —— Left sidebar —— #}
-        <aside class="sidebar sidebar-left">
-            <a class="sidebar-logo" href="{{ url_for('coach_dashboard') if current_user.__class__.__name__ == 'Coach' else url_for('athlete_dashboard') }}">
-                <span class="sidebar-logo-icon">CH</span>
-                <span class="sidebar-logo-text">CoachHub</span>
-            </a>
-            <nav class="sidebar-nav">
-                <a href="{{ url_for('coach_dashboard') if current_user.__class__.__name__ == 'Coach' else url_for('athlete_dashboard') }}" class="sidebar-link {{ 'active' if request.endpoint in ('coach_dashboard', 'athlete_dashboard') else '' }}">
-                    <i class="bi bi-grid-1x2"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{{ url_for('coach_dashboard') if current_user.__class__.__name__ == 'Coach' else url_for('athlete_dashboard') }}#calendar" class="sidebar-link">
-                    <i class="bi bi-calendar3"></i>
-                    <span>Calendar</span>
-                </a>
-                {% if current_user.__class__.__name__ == 'Coach' %}
-                <a href="{{ url_for('roster') }}" class="sidebar-link {{ 'active' if request.endpoint == 'roster' else '' }}">
-                    <i class="bi bi-people"></i>
-                    <span>Roster</span>
-                </a>
-                {% else %}
-                <a href="{{ url_for('team_roster', team_id=current_user.teams.first().id) if current_user.teams.first() else url_for('athlete_dashboard') }}" class="sidebar-link {{ 'active' if request.endpoint == 'team_roster' else '' }}">
-                    <i class="bi bi-people"></i>
-                    <span>Roster</span>
-                </a>
-                {% endif %}
-                <a href="#" class="sidebar-link"><i class="bi bi-gear"></i><span>Settings</span></a>
-            </nav>
-            <div class="sidebar-cta">
-                <div class="sidebar-cta-card card-saas">
-                    <p class="sidebar-cta-title">Invite your team</p>
-                    <p class="sidebar-cta-text">Share your invite code and grow your squad.</p>
-                    <a href="{{ url_for('create_team') if current_user.__class__.__name__ == 'Coach' else url_for('join_team') }}" class="btn-saas btn-saas-sm">Get started</a>
-                </div>
-            </div>
-        </aside>
-
-        {# —— Main content area (block content is below, single place) —— #}
-        <main class="dashboard-main">
-    {% else %}
+<body>
     <nav class="nav-minimal">
-        <a class="nav-logo" href="{{ url_for('index') }}">CoachHub</a>
+        <a class="nav-logo" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('index') }}">CoachHub</a>
         <div class="nav-right">
+            {% if current_user.is_authenticated %}
+            <span class="nav-user-name">{{ current_user.name }}</span>
+            <a href="{{ url_for('logout') }}">Log out</a>
+            {% else %}
             <a href="{{ url_for('login') }}">Log in</a>
             <a href="{{ url_for('choose_role') }}">Sign up</a>
+            {% endif %}
         </div>
     </nav>
     <div class="app-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-banner {{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         <main class="content">
-    {% endif %}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="flash-banner {{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-    </main>
-    {% if current_user.is_authenticated %}
-        {# —— Right sidebar —— #}
-        <aside class="sidebar sidebar-right">
-            <div class="card-saas profile-card">
-                <div class="profile-card-avatar">{{ current_user.name[0]|upper if current_user.name else '?' }}</div>
-                <div class="profile-card-info">
-                    <span class="profile-card-name">{{ current_user.name }}</span>
-                    <span class="profile-card-role">{{ 'Coach' if current_user.__class__.__name__ == 'Coach' else 'Athlete' }}</span>
-                </div>
-                <a href="{{ url_for('logout') }}" class="profile-card-logout" title="Log out"><i class="bi bi-box-arrow-right"></i></a>
-            </div>
-            <div class="card-saas widget-card" id="calendar">
-                <h3 class="widget-card-title">Calendar</h3>
-                <div class="mini-calendar" id="mini-calendar">
-                    <div class="mini-calendar-header">
-                        <button type="button" class="mini-calendar-nav" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
-                        <span class="mini-calendar-month">March 2026</span>
-                        <button type="button" class="mini-calendar-nav" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
-                    </div>
-                    <div class="mini-calendar-weekdays">
-                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-                    </div>
-                    <div class="mini-calendar-days" id="mini-calendar-days"></div>
-                </div>
-            </div>
-            <div class="card-saas widget-card">
-                <h3 class="widget-card-title">Ongoing teams</h3>
-                <div class="ongoing-list">
-                    {% for team in current_user.teams.limit(4) %}
-                    <div class="ongoing-item">
-                        <div class="ongoing-icon"><i class="bi bi-people-fill"></i></div>
-                        <div class="ongoing-info">
-                            <span class="ongoing-title">{{ team.name }}</span>
-                            <div class="progress-bar-saas">
-                                <div class="progress-fill-saas" style="width: {{ (team.id % 4) * 25 + 25 }}%"></div>
-                            </div>
-                        </div>
-                        <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="ongoing-link"><i class="bi bi-chevron-right"></i></a>
-                    </div>
-                    {% else %}
-                    <p class="ongoing-empty">No teams yet. <a href="{{ url_for('create_team') if current_user.__class__.__name__ == 'Coach' else url_for('join_team') }}">Create</a> or <a href="{{ url_for('join_team') }}">join</a> one.</p>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="card-saas stats-card">
-                <div class="stats-card-icon"><i class="bi bi-trophy"></i></div>
-                <div class="stats-card-content">
-                    <span class="stats-card-value">0</span>
-                    <span class="stats-card-label">Points collected</span>
-                </div>
-            </div>
-        </aside>
+            {% block content %}{% endblock %}
+        </main>
     </div>
-    {% else %}
-    </div>
-    {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    {% if current_user.is_authenticated %}
-    <script>
-    (function() {
-        var daysEl = document.getElementById('mini-calendar-days');
-        if (!daysEl) return;
-        var d = new Date();
-        var year = d.getFullYear();
-        var month = d.getMonth();
-        var first = new Date(year, month, 1);
-        var last = new Date(year, month + 1, 0);
-        var startPad = first.getDay();
-        var daysInMonth = last.getDate();
-        var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-        document.querySelector('.mini-calendar-month').textContent = monthNames[month] + ' ' + year;
-        var today = d.getDate();
-        var html = '';
-        for (var i = 0; i < startPad; i++) html += '<span class="mini-calendar-day empty"></span>';
-        for (var i = 1; i <= daysInMonth; i++) {
-            var cls = 'mini-calendar-day' + (i === today ? ' today' : '');
-            html += '<span class="' + cls + '">' + i + '</span>';
-        }
-        daysEl.innerHTML = html;
-    })();
-    </script>
-    {% endif %}
     {% block scripts %}{% endblock %}
 </body>
 </html>

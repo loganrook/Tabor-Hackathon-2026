@@ -87,7 +87,9 @@ def create_app(config_class=Config):
 
     @app.route("/")
     def index():
-        """Serve the homepage (templates/home.html). Shows Login + Sign Up for guests."""
+        """Serve the homepage for guests; redirect logged-in users to dashboard."""
+        if current_user.is_authenticated:
+            return redirect(url_for("dashboard"))
         return render_template("home.html")
 
     @app.route("/login", methods=["GET", "POST"])
@@ -116,12 +118,12 @@ def create_app(config_class=Config):
             if coach and coach.check_password(password):
                 _login_failures.pop(ip, None)
                 login_user(coach)
-                return redirect(url_for("coach_dashboard"))
+                return redirect(url_for("dashboard"))
             athlete = Athlete.query.filter_by(email=email).first()
             if athlete and athlete.check_password(password):
                 _login_failures.pop(ip, None)
                 login_user(athlete)
-                return redirect(url_for("athlete_dashboard"))
+                return redirect(url_for("dashboard"))
             count += 1
             block_until = (now + 300) if count >= 5 else 0
             _login_failures[ip] = (count, block_until)
@@ -133,9 +135,7 @@ def create_app(config_class=Config):
     def choose_role():
         """Intermediate sign-up step: pick Coach or Athlete before registration."""
         if current_user.is_authenticated:
-            if isinstance(current_user, Coach):
-                return redirect(url_for("coach_dashboard"))
-            return redirect(url_for("athlete_dashboard"))
+            return redirect(url_for("dashboard"))
         return render_template("choose_role.html")
 
     @app.route("/register", methods=["GET", "POST"])
@@ -169,7 +169,7 @@ def create_app(config_class=Config):
                 db.session.commit()
                 login_user(coach)
                 flash("Account created. Welcome!", "success")
-                return redirect(url_for("coach_dashboard"))
+                return redirect(url_for("dashboard"))
             if role == "athlete":
                 if Athlete.query.filter_by(email=email).first():
                     flash("An account with that email already exists.", "error")
@@ -180,7 +180,7 @@ def create_app(config_class=Config):
                 db.session.commit()
                 login_user(athlete)
                 flash("Account created. Welcome! Join a team from your dashboard.", "success")
-                return redirect(url_for("athlete_dashboard"))
+                return redirect(url_for("dashboard"))
             flash("Please select coach or athlete.", "error")
             return render_template("register.html", role_param=request.form.get("role"))
         return render_template("register.html", role_param=request.args.get("role"))
@@ -191,34 +191,24 @@ def create_app(config_class=Config):
         logout_user()
         return redirect(url_for("index"))
 
-    @app.route("/coach/dashboard")
+    @app.route("/dashboard")
     @login_required
-    def coach_dashboard():
-        """Coach dashboard: list of teams as cards/links. Redirect to team if only one."""
-        if not isinstance(current_user, Coach):
-            return redirect(url_for("athlete_dashboard"))
+    def dashboard():
+        """Single dashboard for coaches and athletes: list of teams as cards."""
         teams = current_user.teams.all()
-        if len(teams) == 1:
-            return redirect(url_for("team_dashboard", team_id=teams[0].id))
-        return render_template("coach_dashboard.html", teams=teams)
-
-    @app.route("/athlete/dashboard")
-    @login_required
-    def athlete_dashboard():
-        """Athlete dashboard: list of teams as cards/links. Redirect to team if only one."""
-        if not isinstance(current_user, Athlete):
-            return redirect(url_for("coach_dashboard"))
-        teams = current_user.teams.all()
-        if len(teams) == 1:
-            return redirect(url_for("team_dashboard", team_id=teams[0].id))
-        return render_template("athlete_dashboard.html", teams=teams)
+        is_coach = isinstance(current_user, Coach)
+        return render_template(
+            "dashboard.html",
+            teams=teams,
+            is_coach=is_coach,
+        )
 
     @app.route("/team/create", methods=["GET", "POST"])
     @login_required
     def create_team():
         """Show form to create team (GET) or create team and persist (POST)."""
         if not isinstance(current_user, Coach):
-            return redirect(url_for("athlete_dashboard"))
+            return redirect(url_for("dashboard"))
         if request.method == "POST":
             name = request.form.get("name", "").strip()
             if not name:
@@ -232,7 +222,7 @@ def create_app(config_class=Config):
             db.session.add(team)
             db.session.commit()
             flash("Team created successfully.", "success")
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         return render_template("team_create.html")
 
     @app.route("/team/join", methods=["GET", "POST"])
@@ -240,7 +230,7 @@ def create_app(config_class=Config):
     def join_team():
         """Show form to join team by invite code (GET) or add athlete to team (POST)."""
         if not isinstance(current_user, Athlete):
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         if request.method == "POST":
             code = request.form.get("invite_code", "").strip().upper()
             if not code:
@@ -252,11 +242,11 @@ def create_app(config_class=Config):
                 return render_template("join_team.html")
             if current_user.teams.filter(Team.id == team.id).first():
                 flash("You are already on this team.", "info")
-                return redirect(url_for("athlete_dashboard"))
+                return redirect(url_for("dashboard"))
             team.athletes.append(current_user)
             db.session.commit()
             flash("You have joined the team.", "success")
-            return redirect(url_for("athlete_dashboard"))
+            return redirect(url_for("dashboard"))
         return render_template("join_team.html")
 
     @app.route("/team/<int:team_id>")
@@ -267,8 +257,8 @@ def create_app(config_class=Config):
         if not _user_can_access_team(team):
             flash("You do not have access to this team.", "error")
             if isinstance(current_user, Coach):
-                return redirect(url_for("coach_dashboard"))
-            return redirect(url_for("athlete_dashboard"))
+                return redirect(url_for("dashboard"))
+            return redirect(url_for("dashboard"))
         athletes = team.athletes.all()
         groups = team.groups.order_by(Group.name).all()
         announcements = (
@@ -355,7 +345,7 @@ def create_app(config_class=Config):
         team = Team.query.get_or_404(team_id)
         if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
             flash("You cannot post announcements for this team.", "error")
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         content = request.form.get("content", "").strip()
         if not content:
             flash("Announcement cannot be empty.", "error")
@@ -377,7 +367,7 @@ def create_app(config_class=Config):
         team = Team.query.get_or_404(team_id)
         if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
             flash("You cannot create groups for this team.", "error")
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         if request.method == "POST":
             name = request.form.get("name", "").strip()
             if not name:
@@ -398,7 +388,7 @@ def create_app(config_class=Config):
         group = Group.query.filter_by(id=group_id, team_id=team_id).first_or_404()
         if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
             flash("You cannot manage this group.", "error")
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         athletes = team.athletes.all()
         if request.method == "POST":
             selected_ids = set(request.form.getlist("athlete_id"))
@@ -423,8 +413,8 @@ def create_app(config_class=Config):
         if not _user_can_access_team(team):
             flash("You do not have access to this team.", "error")
             if isinstance(current_user, Coach):
-                return redirect(url_for("coach_dashboard"))
-            return redirect(url_for("athlete_dashboard"))
+                return redirect(url_for("dashboard"))
+            return redirect(url_for("dashboard"))
         athletes = team.athletes.all()
         is_coach = isinstance(current_user, Coach) and team.coach_id == current_user.id
         return render_template(
@@ -439,7 +429,7 @@ def create_app(config_class=Config):
     def roster():
         """List athletes for the current coach/context (across all coach's teams)."""
         if not isinstance(current_user, Coach):
-            return redirect(url_for("athlete_dashboard"))
+            return redirect(url_for("dashboard"))
         athletes = (
             Athlete.query.filter(Athlete.teams.any(Team.coach_id == current_user.id))
             .distinct()
@@ -462,7 +452,7 @@ def create_app(config_class=Config):
         team = Team.query.get_or_404(team_id)
         if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
             flash("You cannot create assignments for this team.", "error")
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         if request.method == "POST":
             title = request.form.get("title", "").strip()
             description = request.form.get("description", "").strip() or None
@@ -543,11 +533,11 @@ def create_app(config_class=Config):
         """Athlete only: mark their AssignmentStatus as completed. Create status if missing (joined later)."""
         if not isinstance(current_user, Athlete):
             flash("Only athletes can complete assignments.", "error")
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         assignment = Assignment.query.get_or_404(assignment_id)
         if not _user_can_access_team(assignment.team):
             flash("You do not have access to this team.", "error")
-            return redirect(url_for("athlete_dashboard"))
+            return redirect(url_for("dashboard"))
         status = AssignmentStatus.query.filter_by(
             assignment_id=assignment_id,
             athlete_id=current_user.id,
@@ -573,11 +563,11 @@ def create_app(config_class=Config):
         """Athlete only: undo their own completion of an assignment."""
         if not isinstance(current_user, Athlete):
             flash("Only athletes can undo assignment completion.", "error")
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         assignment = Assignment.query.get_or_404(assignment_id)
         if not _user_can_access_team(assignment.team):
             flash("You do not have access to this team.", "error")
-            return redirect(url_for("athlete_dashboard"))
+            return redirect(url_for("dashboard"))
         status = AssignmentStatus.query.filter_by(
             assignment_id=assignment_id,
             athlete_id=current_user.id,
@@ -608,7 +598,7 @@ def create_app(config_class=Config):
         team = assignment.team
         if not _coach_owns_team(team):
             flash("You cannot edit this assignment.", "error")
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         if request.method == "POST":
             title = request.form.get("title", "").strip()
             description = request.form.get("description", "").strip() or None
@@ -681,7 +671,7 @@ def create_app(config_class=Config):
         team = assignment.team
         if not _coach_owns_team(team):
             flash("You cannot delete this assignment.", "error")
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         title = assignment.title
         AssignmentStatus.query.filter_by(assignment_id=assignment_id).delete()
         db.session.delete(assignment)
@@ -704,7 +694,7 @@ def create_app(config_class=Config):
         team = ann.team
         if not _coach_owns_team(team):
             flash("You cannot edit this announcement.", "error")
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         if request.method == "POST":
             content = request.form.get("content", "").strip()
             if not content:
@@ -732,7 +722,7 @@ def create_app(config_class=Config):
         team = ann.team
         if not _coach_owns_team(team):
             flash("You cannot delete this announcement.", "error")
-            return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("dashboard"))
         db.session.delete(ann)
         db.session.commit()
         flash("Announcement deleted.", "success")
@@ -743,7 +733,7 @@ def create_app(config_class=Config):
     def list_assignments():
         """Coach-only: list all assignments across the coach's teams."""
         if not isinstance(current_user, Coach):
-            return redirect(url_for("athlete_dashboard"))
+            return redirect(url_for("dashboard"))
         team_ids = [t.id for t in current_user.teams.all()]
         assignments = (
             Assignment.query.filter(Assignment.team_id.in_(team_ids))

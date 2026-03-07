@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
     <h1>Assignments</h1>
-    <a href="{{ url_for('coach_dashboard') }}" class="back-link">← Dashboard</a>
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Dashboard</a>
 </div>
 
 {% if assignments %}
@@ -29,7 +29,7 @@
 {% else %}
 <div class="empty-state section">
     <p>No assignments yet. Open a team from your dashboard to create one.</p>
-    <a href="{{ url_for('coach_dashboard') }}" class="back-link">← Dashboard</a>
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Dashboard</a>
 </div>
 {% endif %}
 {% endblock %}
