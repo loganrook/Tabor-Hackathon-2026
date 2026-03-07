@@ -6,7 +6,7 @@ Who works here: Backend / API.
 Responsibilities: App creation, minimal request handling; keep business logic in models.
 """
 
-from flask import Flask, render_template, redirect, url_for, flash, request
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from email_validator import validate_email, EmailNotValidError
 from config import Config
@@ -114,6 +114,73 @@ def create_app(config_class=Config):
             and team is not None
             and team.coach_id == current_user.id
         )
+
+    def _get_workout_completion_breakdown(team, workout):
+        """Return (completed_athletes, not_completed_athletes) lists for a workout."""
+        exercises = workout.exercises.all()
+        exercise_ids = [ex.id for ex in exercises]
+        if not exercise_ids:
+            return [], []
+
+        statuses = ExerciseStatus.query.filter(
+            ExerciseStatus.exercise_id.in_(exercise_ids)
+        ).all()
+
+        per_athlete = {}
+        for status in statuses:
+            bucket = per_athlete.setdefault(
+                status.athlete_id,
+                {
+                    "athlete": status.athlete,
+                    "statuses": [],
+                },
+            )
+            bucket["statuses"].append(status)
+
+        completed_athletes = []
+        not_completed_athletes = []
+
+        for athlete_id, data in per_athlete.items():
+            sts = data["statuses"]
+            total = len(sts)
+            completed_count = sum(1 for s in sts if s.completed)
+            last_completed_at = max(
+                (s.completed_at for s in sts if s.completed_at), default=None
+            )
+            athlete = data["athlete"]
+            groups = (
+                athlete.groups.filter(Group.team_id == team.id)
+                .order_by(Group.name)
+                .all()
+            )
+            if groups:
+                group_label = ", ".join(g.name for g in groups)
+            else:
+                group_label = "Entire Team"
+
+            record = {
+                "athlete": athlete,
+                "group_label": group_label,
+                "completed_exercises": completed_count,
+                "total_exercises": total,
+                "completed": total > 0 and completed_count == total,
+                "completed_at": last_completed_at,
+            }
+            if record["completed"]:
+                completed_athletes.append(record)
+            else:
+                not_completed_athletes.append(record)
+
+        completed_athletes.sort(
+            key=lambda r: (
+                r["completed_at"] or datetime.min,
+                r["athlete"].name.lower(),
+            ),
+            reverse=True,
+        )
+        not_completed_athletes.sort(key=lambda r: r["athlete"].name.lower())
+
+        return completed_athletes, not_completed_athletes
 
     # ---------- Routes ----------
 
@@ -1207,6 +1274,63 @@ def create_app(config_class=Config):
             overall_total=overall_total,
             athlete_statuses=athlete_statuses,
             set_plans=set_plans,
+        )
+
+    @app.route("/team/<int:team_id>/workout/<int:workout_id>/completions")
+    @login_required
+    def workout_completions(team_id, workout_id):
+        """Coach-only: per-athlete completion breakdown for a workout."""
+        team = Team.query.get_or_404(team_id)
+        workout = Workout.query.filter_by(id=workout_id, team_id=team_id).first_or_404()
+        if not isinstance(current_user, Coach) or not _user_can_access_team(team):
+            flash("You do not have access to this page.", "error")
+            return redirect(url_for("dashboard"))
+
+        completed_athletes, not_completed_athletes = _get_workout_completion_breakdown(
+            team, workout
+        )
+        return render_template(
+            "workout_completions.html",
+            team=team,
+            workout=workout,
+            completed_athletes=completed_athletes,
+            not_completed_athletes=not_completed_athletes,
+        )
+
+    @app.route("/team/<int:team_id>/workout/<int:workout_id>/completions.json")
+    @login_required
+    def workout_completions_json(team_id, workout_id):
+        """Coach-only: JSON version of per-athlete completion breakdown."""
+        team = Team.query.get_or_404(team_id)
+        workout = Workout.query.filter_by(id=workout_id, team_id=team_id).first_or_404()
+        if not isinstance(current_user, Coach) or not _user_can_access_team(team):
+            return jsonify({"error": "Not authorized"}), 403
+
+        completed_athletes, not_completed_athletes = _get_workout_completion_breakdown(
+            team, workout
+        )
+
+        def _serialize(record):
+            athlete = record["athlete"]
+            completed_at = record["completed_at"]
+            return {
+                "name": athlete.name,
+                "groupLabel": record["group_label"],
+                "completed": record["completed"],
+                "completedExercises": record["completed_exercises"],
+                "totalExercises": record["total_exercises"],
+                "completedAt": completed_at.isoformat() if completed_at else None,
+                "completedAtDisplay": fmt_datetime(completed_at)
+                if completed_at
+                else "",
+            }
+
+        return jsonify(
+            {
+                "workoutTitle": workout.title,
+                "completed": [_serialize(r) for r in completed_athletes],
+                "notCompleted": [_serialize(r) for r in not_completed_athletes],
+            }
         )
 
     @app.route("/exercise/<int:exercise_id>/complete", methods=["POST"])

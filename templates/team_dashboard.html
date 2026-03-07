@@ -145,7 +145,13 @@
                                         {% set pct = (completion[0] / completion[1] * 100) if completion[1] > 0 else 0 %}
                                         <div class="progress-fill" data-pct="{{ '%.0f' % pct }}"></div>
                                     </div>
-                                    <p class="workout-progress-text">{{ completion[0] }}/{{ completion[1] }} completed</p>
+                                    <p
+                                        class="workout-progress-text completion-clickable"
+                                        data-completion-url="{{ url_for('workout_completions_json', team_id=team.id, workout_id=w.id) }}"
+                                    >
+                                        {{ completion[0] }}/{{ completion[1] }} completed
+                                        <span class="workout-progress-detail-link">View details</span>
+                                    </p>
                                 </div>
                                 <div class="workout-actions-hover">
                                     <a href="{{ url_for('workout_edit', team_id=team.id, workout_id=w.id) }}" class="btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
@@ -172,6 +178,31 @@
             </aside>
         </div>
     </main>
+</div>
+
+<div id="completion-modal-backdrop" class="completion-modal-backdrop completion-modal-hidden">
+    <div class="completion-modal">
+        <div class="completion-modal-header">
+            <h3 id="completion-modal-title">Workout completions</h3>
+            <button type="button" class="btn-icon completion-modal-close" aria-label="Close">
+                <span>&times;</span>
+            </button>
+        </div>
+        <div class="completion-modal-body">
+            <div class="completion-section">
+                <h4 class="completion-section-title">
+                    Completed (<span id="completion-count-completed">0</span>)
+                </h4>
+                <ul id="completion-list-completed" class="completion-list"></ul>
+            </div>
+            <div class="completion-section">
+                <h4 class="completion-section-title">
+                    Not Completed (<span id="completion-count-not-completed">0</span>)
+                </h4>
+                <ul id="completion-list-not-completed" class="completion-list"></ul>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="{{ url_for('static', filename='team_calendar.js') }}"></script>
@@ -230,6 +261,100 @@
         document.addEventListener("DOMContentLoaded", initAnnouncementTimes);
     } else {
         initAnnouncementTimes();
+    }
+})();
+
+(function() {
+    function $(selector) {
+        return document.querySelector(selector);
+    }
+    function $all(selector) {
+        return Array.prototype.slice.call(document.querySelectorAll(selector));
+    }
+
+    var backdrop = $("#completion-modal-backdrop");
+    if (!backdrop) return;
+
+    var modalTitle = $("#completion-modal-title");
+    var listCompleted = $("#completion-list-completed");
+    var listNotCompleted = $("#completion-list-not-completed");
+    var countCompleted = $("#completion-count-completed");
+    var countNotCompleted = $("#completion-count-not-completed");
+
+    function closeModal() {
+        backdrop.classList.add("completion-modal-hidden");
+    }
+
+    function openModal() {
+        backdrop.classList.remove("completion-modal-hidden");
+    }
+
+    backdrop.addEventListener("click", function (evt) {
+        if (evt.target === backdrop) {
+            closeModal();
+        }
+    });
+    var closeBtn = backdrop.querySelector(".completion-modal-close");
+    if (closeBtn) {
+        closeBtn.addEventListener("click", function () {
+            closeModal();
+        });
+    }
+
+    function renderList(targetEl, items, icon, showTime) {
+        targetEl.innerHTML = "";
+        items.forEach(function (item) {
+            var li = document.createElement("li");
+            li.className = "completion-row";
+            var statusSpan = document.createElement("span");
+            statusSpan.className = "completion-status-icon";
+            statusSpan.textContent = icon;
+            var textSpan = document.createElement("span");
+            textSpan.className = "completion-text";
+            var line = item.name + " — " + item.groupLabel;
+            if (showTime && item.completedAtDisplay) {
+                line += " — Completed " + item.completedAtDisplay;
+            }
+            textSpan.textContent = line;
+            li.appendChild(statusSpan);
+            li.appendChild(textSpan);
+            targetEl.appendChild(li);
+        });
+    }
+
+    function attachHandlers() {
+        $all(".completion-clickable").forEach(function (el) {
+            el.addEventListener("click", function (evt) {
+                evt.preventDefault();
+                var url = el.getAttribute("data-completion-url");
+                if (!url) return;
+                fetch(url, { credentials: "same-origin" })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (!data) return;
+                        if (modalTitle) {
+                            modalTitle.textContent = "Workout: " + (data.workoutTitle || "");
+                        }
+                        var completed = data.completed || [];
+                        var notCompleted = data.notCompleted || [];
+                        if (countCompleted) countCompleted.textContent = completed.length;
+                        if (countNotCompleted) countNotCompleted.textContent = notCompleted.length;
+                        if (listCompleted) renderList(listCompleted, completed, "✓", true);
+                        if (listNotCompleted) renderList(listNotCompleted, notCompleted, "✕", false);
+                        openModal();
+                    })
+                    .catch(function () {
+                        // If something fails, fall back to full page
+                        window.location.href = url.replace(/\\.json$/, "");
+                    });
+            });
+        });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", attachHandlers);
+    } else {
+        attachHandlers();
     }
 })();
 </script>
