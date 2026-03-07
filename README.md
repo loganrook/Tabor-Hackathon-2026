@@ -1,6 +1,6 @@
-# GamePlan
+# RepRoom
 
-GamePlan is a coach–athlete management web app built with Flask. Coaches create teams and share invite codes; athletes join teams and view workouts. UI uses Bootstrap 5, Bootstrap Icons, and custom GamePlan branding.
+RepRoom is a coach–athlete management web app built with Flask. Coaches create teams and share invite codes; athletes join teams and view workouts. UI uses Bootstrap 5, Bootstrap Icons, and custom RepRoom branding.
 
 ## Stack
 
@@ -46,7 +46,7 @@ GamePlan is a coach–athlete management web app built with Flask. Coaches creat
 
 ## Demo data
 
-On first launch against an empty database, GamePlan automatically seeds a small demo environment so the UI looks “alive” without any manual setup:
+On first launch against an empty database, RepRoom automatically seeds a small demo environment so the UI looks “alive” without any manual setup:
 
 - **Coach accounts**
   - `coach@example.com` / `Password123!` (head coach)
@@ -84,7 +84,7 @@ Tests are stubs for now; implement them as you add features (e.g. login, DB oper
 
 - **Calendar**: The team dashboard calendar starts weeks on Sunday, stretches rows to fill the available height, and shows a tiny preview of the first workout title inside each day cell so coaches can quickly scan what’s coming. Dots under each day indicate workout due dates and announcements.
 - **Sidebar & roster**: The team sidebar focuses on simple section labels (Team Hub, Workouts, Roster, Groups, Team Settings), while the roster page itself shows a player count under the `Roster` heading (for example, `5 players`).
-- **Top bar**: When viewing a team, the top bar shows a breadcrumb-style context like `GamePlan › Football`, with the team name slightly larger and bolder for orientation.
+- **Top bar**: When viewing a team, the top bar shows a breadcrumb-style context like `RepRoom › Football`, with the team name slightly larger and bolder for orientation.
 - **Right column**: The right column is split into Announcements and Workouts. Cards in this column use the same clean white card style as the rest of the app so workouts, announcements, and their progress states all feel consistent. Announcement timestamps use friendly “time ago” text like `Just now` or `2 hours ago`, the plus icons have hover tooltips, and empty states include subtle icons so they feel intentional rather than broken. Coaches see per-workout completion progress; athletes see their own exercise completion status.
 
 ## Workouts: sets and reps

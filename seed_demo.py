@@ -28,7 +28,7 @@ def ensure_demo_data() -> None:
     now = datetime.now()
 
     # --- Coaches ---
-    coach = Coach(name="Coach Taylor", email=DEMO_COACH_EMAIL)
+    coach = Coach(name="Coach Taylor", email= "coach@example.com")
     coach.set_password("Password123!")
     assistant = Coach(name="Assistant Kelly", email="assistant@example.com")
     assistant.set_password("Password123!")
@@ -73,7 +73,7 @@ def ensure_demo_data() -> None:
 
     # --- Announcements ---
     ann1 = Announcement(
-        content="Welcome to GamePlan! Check your workouts for this week.",
+        content="Welcome to RepRoom! Check your workouts for this week.",
         team_id=team.id,
         created_by=coach.id,
         created_at=now - timedelta(hours=2),

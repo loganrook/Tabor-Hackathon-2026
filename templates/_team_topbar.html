@@ -2,7 +2,7 @@
 <header class="team-topbar">
     <h1 class="team-topbar-name">
         {% if team is defined %}
-            <span class="team-topbar-crumb-root">GamePlan</span>
+            <span class="team-topbar-crumb-root">RepRoom</span>
             <span class="team-topbar-crumb-separator">›</span>
             <span class="team-topbar-crumb-leaf">{{ team.name }}</span>
             {% if request.endpoint == 'team_settings' %}
@@ -19,9 +19,9 @@
                 <span class="team-topbar-crumb-sub">Workout</span>
             {% endif %}
         {% elif request.endpoint == 'dashboard' %}
-            GamePlan
+            RepRoom
         {% else %}
-            GamePlan
+            RepRoom
         {% endif %}
     </h1>
     <div class="team-topbar-right">

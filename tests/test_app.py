@@ -23,7 +23,7 @@ def test_homepage_returns_200(client):
     """GET / should return 200 and render the home page."""
     resp = client.get("/")
     assert resp.status_code == 200
-    assert b"GamePlan" in resp.data
+    assert b"RepRoom" in resp.data
 
 
 def test_login_page_returns_200(client):
