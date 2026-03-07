@@ -1,0 +1,28 @@
+{# coach_dashboard.html — Coach dashboard.
+   Purpose: Roster overview and entry point to add athlete.
+   Who works here: Frontend.
+   Responsibilities: Roster overview section; add-athlete link/form placeholder. #}
+{% extends "base.html" %}
+{% block title %}Coach Dashboard — Coach–Athlete App{% endblock %}
+
+{% block content %}
+<h1>Coach Dashboard</h1>
+
+<section class="roster-overview">
+    <h2>Roster overview</h2>
+    <p>No athletes yet.</p>
+    <!-- TODO: List athletes for current coach -->
+</section>
+
+<section class="add-athlete">
+    <h2>Add athlete</h2>
+    <form action="{{ url_for('add_athlete') }}" method="post">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email">
+        <button type="submit">Add athlete</button>
+    </form>
+    <!-- TODO: Add team selector; validate and persist in route -->
+</section>
+{% endblock %}

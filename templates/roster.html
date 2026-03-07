@@ -1,0 +1,25 @@
+{# roster.html — Roster list view.
+   Purpose: Table of athletes for the current coach/context.
+   Who works here: Frontend.
+   Responsibilities: Table with Name, Email, Actions; backend data binding later. #}
+{% extends "base.html" %}
+{% block title %}Roster — Coach–Athlete App{% endblock %}
+
+{% block content %}
+<h1>Roster</h1>
+<table class="roster-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- TODO: {% for athlete in athletes %} ... {% endfor %} -->
+        <tr>
+            <td colspan="3">No athletes on roster.</td>
+        </tr>
+    </tbody>
+</table>
+{% endblock %}

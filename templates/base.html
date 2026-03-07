@@ -1,0 +1,40 @@
+{# base.html — Master layout for all pages.
+   Purpose: Single layout for navbar, flash messages, and content block.
+   Who works here: Frontend.
+   Responsibilities: Navbar, flash block, content block, common CSS/scripts. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Coach–Athlete App{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="{{ url_for('index') }}">Coach–Athlete App</a>
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('login') }}">Login</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+        <a href="{{ url_for('coach_dashboard') }}">Coach Dashboard</a>
+        <a href="{{ url_for('athlete_dashboard') }}">Athlete Dashboard</a>
+        <a href="{{ url_for('roster') }}">Roster</a>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flash-messages">
+                {% for category, message in messages %}
+                    <li class="flash-{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
