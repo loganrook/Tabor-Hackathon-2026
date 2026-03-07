@@ -1,66 +1,47 @@
-{# team_dashboard.html — Team page: name, roster, assignments. Coach sees create/manage links; athlete read-only. #}
+{# team_dashboard.html — Team name, back link, roster list, assignment cards. Coach sees Add Assignment. #}
 {% extends "base.html" %}
 {% block title %}{{ team.name }} — CoachHub{% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
-    <h1><i class="bi bi-flag-fill text-primary"></i> {{ team.name }}</h1>
-    <a href="{{ url_for('coach_dashboard') if is_coach else url_for('athlete_dashboard') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Back to my teams
-    </a>
+<div class="page-header">
+    <h1>{{ team.name }}</h1>
+    <a href="{{ url_for('coach_dashboard') if is_coach else url_for('athlete_dashboard') }}" class="back-link">← Back to my teams</a>
 </div>
 
 {% if is_coach %}
-<p class="text-muted mb-3">Invite code: <code class="invite-code">{{ team.invite_code }}</code> — share with athletes to join.</p>
+<p class="team-meta invite-line">Invite code: <span class="invite-code">{{ team.invite_code }}</span> — share with athletes to join.</p>
 {% endif %}
 
-<section class="mb-4">
-    <h2 class="section-heading"><i class="bi bi-people"></i> Roster</h2>
-    {% if is_coach %}
-    <p class="mb-2">
-        <a href="{{ url_for('team_roster', team_id=team.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-people"></i> View / manage roster</a>
-    </p>
-    {% endif %}
+<section class="section">
+    <h2 class="section-heading">Roster</h2>
     {% if athletes %}
-    <table class="table roster-table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Email</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for a in athletes %}
-            <tr>
-                <td>{{ a.name }}</td>
-                <td>{{ a.email }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p class="text-muted">No athletes on this team yet.</p>
-    {% endif %}
-</section>
-
-<section>
-    <h2 class="section-heading"><i class="bi bi-journal-check"></i> Assignments</h2>
-    {% if is_coach %}
-    <p class="mb-2">
-        <a href="{{ url_for('create_team_assignment', team_id=team.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-circle"></i> Create assignment</a>
-    </p>
-    {% endif %}
-    {% if assignments %}
-    <ul class="list-group">
-        {% for a in assignments %}
-        <li class="list-group-item">
-            <strong>{{ a.title }}</strong>
-            {% if a.description %}<p class="mb-0 mt-1 text-muted small">{{ a.description }}</p>{% endif %}
-        </li>
+    <ul class="roster-list">
+        {% for a in athletes %}
+        <li>{{ a.name }}</li>
         {% endfor %}
     </ul>
     {% else %}
-    <p class="text-muted">No assignments yet.</p>
+    <p class="empty-state empty-state-inline">No athletes on this team yet.</p>
+    {% endif %}
+</section>
+
+<section class="section">
+    <h2 class="section-heading">Assignments</h2>
+    {% if is_coach %}
+    <p class="section-action">
+        <a href="{{ url_for('create_team_assignment', team_id=team.id) }}" class="btn-primary btn-primary-inline">Add Assignment</a>
+    </p>
+    {% endif %}
+    {% if assignments %}
+    <div class="assignment-list">
+        {% for a in assignments %}
+        <div class="assignment-card">
+            <p class="assignment-title">{{ a.title }}</p>
+            {% if a.description %}<p class="assignment-desc">{{ a.description }}</p>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state empty-state-inline">No assignments yet.</p>
     {% endif %}
 </section>
 {% endblock %}

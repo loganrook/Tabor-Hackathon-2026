@@ -1,48 +1,28 @@
-{# coach_dashboard.html — Coach home: list of teams as cards/links. #}
+{# coach_dashboard.html — Create Team button + grid of team cards. #}
 {% extends "base.html" %}
-{% block title %}Coach Dashboard — CoachHub{% endblock %}
-
+{% block title %}Your teams — CoachHub{% endblock %}
 {% block content %}
-<div class="dash-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h1><i class="bi bi-speedometer2 text-primary"></i> Coach Dashboard</h1>
-    <div class="d-flex gap-2">
-        <a href="{{ url_for('create_team') }}" class="btn btn-primary action-btn">
-            <i class="bi bi-plus-circle"></i> New Team
-        </a>
-        <a href="{{ url_for('roster') }}" class="btn btn-outline-secondary action-btn">
-            <i class="bi bi-people"></i> View Roster
-        </a>
-    </div>
+<div class="page-header">
+    <h1>Your teams</h1>
+    <a href="{{ url_for('create_team') }}" class="btn-primary btn-primary-inline">Create Team</a>
 </div>
 
-<h2 class="section-heading"><i class="bi bi-flag"></i> Your Teams</h2>
-
 {% if teams %}
-<div class="row g-3">
+<div class="team-grid">
     {% for team in teams %}
-    <div class="col-md-6 col-lg-4">
-        <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-card-link">
-            <div class="card team-card h-100">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-flag-fill text-primary"></i> {{ team.name }}</h5>
-                    <p class="mb-1 text-muted small">Invite code</p>
-                    <span class="invite-code">{{ team.invite_code }}</span>
-                    <p class="mt-3 mb-0 text-muted small">
-                        <i class="bi bi-people-fill"></i> {{ team.athletes.count() }} athlete{{ 's' if team.athletes.count() != 1 else '' }}
-                    </p>
-                </div>
-            </div>
-        </a>
-    </div>
+    <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-card-link">
+        <div class="team-card">
+            <p class="team-name">{{ team.name }}</p>
+            <p class="team-meta">{{ team.athletes.count() }} athlete{{ 's' if team.athletes.count() != 1 else '' }}</p>
+            <p class="team-meta">Invite code: <span class="invite-code">{{ team.invite_code }}</span></p>
+        </div>
+    </a>
     {% endfor %}
 </div>
 {% else %}
-<div class="empty-state">
-    <i class="bi bi-flag"></i>
-    <p class="mb-2">You haven't created any teams yet.</p>
-    <a href="{{ url_for('create_team') }}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Create your first team
-    </a>
+<div class="empty-state section">
+    <p>You haven't created any teams yet.</p>
+    <a href="{{ url_for('create_team') }}" class="btn-hero">Create Team</a>
 </div>
 {% endif %}
 {% endblock %}

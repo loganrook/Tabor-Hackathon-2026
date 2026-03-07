@@ -8,6 +8,7 @@ Responsibilities: App creation, minimal request handling; keep business logic in
 
 from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
+from email_validator import validate_email, EmailNotValidError
 from config import Config
 from extensions import db, login_manager
 
@@ -68,6 +69,11 @@ def create_app(config_class=Config):
             if not email or not password:
                 flash("Email and password are required.", "error")
                 return render_template("login.html")
+            try:
+                validate_email(email, check_deliverability=False)
+            except EmailNotValidError:
+                flash("Please enter a valid email address.", "error")
+                return render_template("login.html")
             coach = Coach.query.filter_by(email=email).first()
             if coach and coach.check_password(password):
                 login_user(coach)
@@ -90,11 +96,16 @@ def create_app(config_class=Config):
             role = request.form.get("role", "").strip().lower()
             if not name or not email or not password:
                 flash("Name, email, and password are required.", "error")
-                return render_template("register.html")
+                return render_template("register.html", role_param=request.form.get("role"))
+            try:
+                validate_email(email, check_deliverability=False)
+            except EmailNotValidError:
+                flash("Please enter a valid email address.", "error")
+                return render_template("register.html", role_param=request.form.get("role"))
             if role == "coach":
                 if Coach.query.filter_by(email=email).first():
                     flash("An account with that email already exists.", "error")
-                    return render_template("register.html")
+                    return render_template("register.html", role_param=request.form.get("role"))
                 coach = Coach(name=name, email=email)
                 coach.set_password(password)
                 db.session.add(coach)
@@ -105,7 +116,7 @@ def create_app(config_class=Config):
             if role == "athlete":
                 if Athlete.query.filter_by(email=email).first():
                     flash("An account with that email already exists.", "error")
-                    return render_template("register.html")
+                    return render_template("register.html", role_param=request.form.get("role"))
                 athlete = Athlete(name=name, email=email)
                 athlete.set_password(password)
                 db.session.add(athlete)
@@ -114,8 +125,8 @@ def create_app(config_class=Config):
                 flash("Account created. Welcome! Join a team from your dashboard.", "success")
                 return redirect(url_for("athlete_dashboard"))
             flash("Please select coach or athlete.", "error")
-            return render_template("register.html")
-        return render_template("register.html")
+            return render_template("register.html", role_param=request.form.get("role"))
+        return render_template("register.html", role_param=request.args.get("role"))
 
     @app.route("/logout")
     def logout():

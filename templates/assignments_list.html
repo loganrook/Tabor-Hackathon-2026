@@ -1,23 +1,26 @@
-{# assignments_list.html — All assignments for coach's teams. #}
+{# assignments_list.html — All assignments for coach's teams, same visual language. #}
 {% extends "base.html" %}
-{% block title %}Assignments — Coach–Athlete App{% endblock %}
-
+{% block title %}Assignments — CoachHub{% endblock %}
 {% block content %}
-<h1>Assignments</h1>
-<p><a href="{{ url_for('coach_dashboard') }}">Go to dashboard</a> to open a team and create assignments.</p>
+<div class="page-header">
+    <h1>Assignments</h1>
+    <a href="{{ url_for('coach_dashboard') }}" class="back-link">← Dashboard</a>
+</div>
+
 {% if assignments %}
-<ul class="assignments-list">
+<div class="assignment-list">
     {% for a in assignments %}
-    <li>
-        <strong>{{ a.title }}</strong>
-        {% if a.team %}({{ a.team.name }}){% endif %}
-        — {{ a.created_at.strftime('%Y-%m-%d %H:%M') if a.created_at else '' }}
-        {% if a.description %}<p>{{ a.description }}</p>{% endif %}
-    </li>
+    <div class="assignment-card">
+        <p class="assignment-title">{{ a.title }}{% if a.team %} ({{ a.team.name }}){% endif %}</p>
+        {% if a.description %}<p class="assignment-desc">{{ a.description }}</p>{% endif %}
+        {% if a.created_at %}<p class="assignment-date">{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</p>{% endif %}
+    </div>
     {% endfor %}
-</ul>
+</div>
 {% else %}
-<p>No assignments yet. <a href="{{ url_for('coach_dashboard') }}">Open a team</a> to create one.</p>
+<div class="empty-state section">
+    <p>No assignments yet. Open a team from your dashboard to create one.</p>
+    <a href="{{ url_for('coach_dashboard') }}" class="back-link">← Dashboard</a>
+</div>
 {% endif %}
-<p><a href="{{ url_for('coach_dashboard') }}">Back to dashboard</a></p>
 {% endblock %}

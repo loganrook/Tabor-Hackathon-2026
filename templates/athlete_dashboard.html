@@ -1,47 +1,27 @@
-{# athlete_dashboard.html — Athlete home: list of teams as cards/links. #}
+{# athlete_dashboard.html — Join Team button + grid of team cards. #}
 {% extends "base.html" %}
-{% block title %}Athlete Dashboard — CoachHub{% endblock %}
-
+{% block title %}My teams — CoachHub{% endblock %}
 {% block content %}
-<div class="dash-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h1><i class="bi bi-speedometer2 text-primary"></i> Athlete Dashboard</h1>
-    <a href="{{ url_for('join_team') }}" class="btn btn-primary action-btn">
-        <i class="bi bi-box-arrow-in-right"></i> Join a Team
-    </a>
+<div class="page-header">
+    <h1>My teams</h1>
+    <a href="{{ url_for('join_team') }}" class="btn-primary btn-primary-inline">Join Team</a>
 </div>
 
-<h2 class="section-heading"><i class="bi bi-flag"></i> My Teams</h2>
-
 {% if teams %}
-<div class="row g-3 mb-4">
+<div class="team-grid">
     {% for team in teams %}
-    <div class="col-md-6 col-lg-4">
-        <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-card-link">
-            <div class="card team-card h-100">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-flag-fill text-primary"></i> {{ team.name }}</h5>
-                    <p class="mb-0 text-muted small">
-                        <i class="bi bi-person"></i> Coach: {{ team.coach.name }}
-                    </p>
-                </div>
-            </div>
-        </a>
-    </div>
+    <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-card-link">
+        <div class="team-card">
+            <p class="team-name">{{ team.name }}</p>
+            <p class="team-meta">Coach: {{ team.coach.name }}</p>
+        </div>
+    </a>
     {% endfor %}
 </div>
 {% else %}
-<div class="empty-state mb-4">
-    <i class="bi bi-flag"></i>
-    <p class="mb-2">You're not on any teams yet.</p>
-    <a href="{{ url_for('join_team') }}" class="btn btn-primary">
-        <i class="bi bi-box-arrow-in-right"></i> Join with an invite code
-    </a>
+<div class="empty-state section">
+    <p>You're not on any teams yet.</p>
+    <a href="{{ url_for('join_team') }}" class="btn-hero">Join Team</a>
 </div>
 {% endif %}
-
-<h2 class="section-heading"><i class="bi bi-journal-check"></i> Assignments</h2>
-<div class="empty-state">
-    <i class="bi bi-journal-check"></i>
-    <p>No assignments yet. Check back soon!</p>
-</div>
 {% endblock %}
