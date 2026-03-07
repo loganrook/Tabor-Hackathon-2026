@@ -102,7 +102,11 @@
                         <div class="assignment-list" id="assignment-list">
                             {% for a in assignments %}
                             <div class="assignment-card {{ 'assignment-card-completed' if not is_coach and assignment_status_by_athlete.get(a.id) and assignment_status_by_athlete[a.id].completed else '' }}" data-group-id="{{ a.group_id or '' }}">
+                                {% if is_coach %}
+                                <p class="assignment-title"><a href="{{ url_for('assignment_completions', assignment_id=a.id) }}" class="assignment-title-link">{{ a.title }}</a></p>
+                                {% else %}
                                 <p class="assignment-title">{{ a.title }}</p>
+                                {% endif %}
                                 <p class="assignment-badges">
                                     {% if a.athlete_id and a.athlete %}
                                     <span class="assignment-badge assignment-badge-individual">{{ a.athlete.name }}</span>

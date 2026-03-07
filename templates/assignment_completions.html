@@ -1,0 +1,72 @@
+{# assignment_completions.html — Coach view: who completed this assignment and who has not. #}
+{% extends "base.html" %}
+{% block title %}Completion — {{ assignment.title }}{% endblock %}
+{% block content %}
+<div class="team-dash-wrapper">
+    {% include '_team_sidebar.html' %}
+
+    <main class="team-dash-main">
+        {% include '_team_topbar.html' %}
+
+        <div class="team-dash-content">
+            <div class="team-page-content">
+                <p class="auth-footer" style="margin-bottom: 1rem;">
+                    <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="back-link">← Back to team</a>
+                </p>
+                <h2 class="team-page-heading completion-heading">{{ assignment.title }}</h2>
+                {% if assignment.due_date %}
+                <p class="text-muted completion-due">Due {{ assignment.due_date|fmt_datetime }}</p>
+                {% endif %}
+
+                <div class="completion-sections">
+                    <section class="completion-section completion-section-done">
+                        <h3 class="completion-section-title">Completed ({{ completed_list|length }})</h3>
+                        {% if completed_list %}
+                        <ul class="completion-list">
+                            {% for row in completed_list %}
+                            <li class="completion-item completion-item-done">
+                                <span class="completion-icon" aria-hidden="true">✓</span>
+                                <span class="completion-name">{{ row.name }}</span>
+                                <span class="completion-groups">— {{ row.groups }}</span>
+                                <span class="completion-time">Completed {{ row.completed_at|fmt_datetime }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="empty-state empty-state-inline">No one has completed this yet.</p>
+                        {% endif %}
+                    </section>
+
+                    <section class="completion-section completion-section-pending">
+                        <h3 class="completion-section-title">Not completed ({{ not_completed_list|length }})</h3>
+                        {% if not_completed_list %}
+                        <ul class="completion-list">
+                            {% for row in not_completed_list %}
+                            <li class="completion-item completion-item-pending">
+                                <span class="completion-icon completion-icon-pending" aria-hidden="true">✗</span>
+                                <span class="completion-name">{{ row.name }}</span>
+                                <span class="completion-groups">— {{ row.groups }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="empty-state empty-state-inline">Everyone has completed this.</p>
+                        {% endif %}
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+(function() {
+    var sidebar = document.getElementById('team-sidebar');
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+        });
+    }
+})();
+</script>
+{% endblock %}

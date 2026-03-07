@@ -716,6 +716,55 @@ def create_app(config_class=Config):
             and team.coach_id == current_user.id
         )
 
+    @app.route("/assignment/<int:assignment_id>/completions")
+    @login_required
+    def assignment_completions(assignment_id):
+        """Coach only: view who completed this assignment and who has not."""
+        assignment = Assignment.query.get_or_404(assignment_id)
+        team = assignment.team
+        if not _coach_owns_team(team):
+            flash("You cannot view this assignment.", "error")
+            return redirect(url_for("dashboard"))
+        # Target athletes (who this assignment is for)
+        if assignment.athlete_id:
+            a = team.athletes.filter(Athlete.id == assignment.athlete_id).first()
+            target_athletes = [a] if a else []
+        elif assignment.group_id:
+            target_athletes = assignment.group.athletes.all()
+        else:
+            target_athletes = team.athletes.all()
+        completed_list = []
+        not_completed_list = []
+        for athlete in target_athletes:
+            group_names = [
+                g.name for g in athlete.groups.filter(Group.team_id == team.id).all()
+            ]
+            groups_str = ", ".join(group_names) if group_names else "—"
+            status = AssignmentStatus.query.filter_by(
+                assignment_id=assignment_id, athlete_id=athlete.id
+            ).first()
+            if status and status.completed:
+                completed_list.append(
+                    {
+                        "name": athlete.name,
+                        "groups": groups_str,
+                        "completed_at": status.completed_at,
+                    }
+                )
+            else:
+                not_completed_list.append({"name": athlete.name, "groups": groups_str})
+        # Sort completed by completed_at desc, not_completed by name
+        completed_list.sort(key=lambda x: x["completed_at"] or datetime.min, reverse=True)
+        not_completed_list.sort(key=lambda x: x["name"].lower())
+        return render_template(
+            "assignment_completions.html",
+            assignment=assignment,
+            team=team,
+            completed_list=completed_list,
+            not_completed_list=not_completed_list,
+            is_coach=True,
+        )
+
     @app.route("/assignment/<int:assignment_id>/edit", methods=["GET", "POST"])
     @login_required
     def edit_assignment(assignment_id):
