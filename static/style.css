@@ -337,7 +337,6 @@ body:not(.dashboard-layout) .form-group textarea:focus {
     text-decoration: none;
     color: inherit;
     cursor: pointer;
-    cursor: pointer;
 }
 
 .team-card {

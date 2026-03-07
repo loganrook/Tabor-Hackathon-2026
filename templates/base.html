@@ -21,12 +21,23 @@
             <nav class="sidebar-nav">
                 <a href="{{ url_for('coach_dashboard') if current_user.__class__.__name__ == 'Coach' else url_for('athlete_dashboard') }}" class="sidebar-link {{ 'active' if request.endpoint in ('coach_dashboard', 'athlete_dashboard') else '' }}">
                     <i class="bi bi-grid-1x2"></i>
-                    <span>Overview</span>
+                    <span>Dashboard</span>
                 </a>
-                <a href="#" class="sidebar-link"><i class="bi bi-person"></i><span>Account</span></a>
-                <a href="#" class="sidebar-link"><i class="bi bi-journal-text"></i><span>Notes</span></a>
-                <a href="#" class="sidebar-link"><i class="bi bi-people"></i><span>Community</span></a>
-                <a href="#" class="sidebar-link"><i class="bi bi-wallet2"></i><span>Wallet</span></a>
+                <a href="{{ url_for('coach_dashboard') if current_user.__class__.__name__ == 'Coach' else url_for('athlete_dashboard') }}#calendar" class="sidebar-link">
+                    <i class="bi bi-calendar3"></i>
+                    <span>Calendar</span>
+                </a>
+                {% if current_user.__class__.__name__ == 'Coach' %}
+                <a href="{{ url_for('roster') }}" class="sidebar-link {{ 'active' if request.endpoint == 'roster' else '' }}">
+                    <i class="bi bi-people"></i>
+                    <span>Roster</span>
+                </a>
+                {% else %}
+                <a href="{{ url_for('team_roster', team_id=current_user.teams.first().id) if current_user.teams.first() else url_for('athlete_dashboard') }}" class="sidebar-link {{ 'active' if request.endpoint == 'team_roster' else '' }}">
+                    <i class="bi bi-people"></i>
+                    <span>Roster</span>
+                </a>
+                {% endif %}
                 <a href="#" class="sidebar-link"><i class="bi bi-gear"></i><span>Settings</span></a>
             </nav>
             <div class="sidebar-cta">
@@ -71,7 +82,7 @@
                 </div>
                 <a href="{{ url_for('logout') }}" class="profile-card-logout" title="Log out"><i class="bi bi-box-arrow-right"></i></a>
             </div>
-            <div class="card-saas widget-card">
+            <div class="card-saas widget-card" id="calendar">
                 <h3 class="widget-card-title">Calendar</h3>
                 <div class="mini-calendar" id="mini-calendar">
                     <div class="mini-calendar-header">
