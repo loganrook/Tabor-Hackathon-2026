@@ -70,6 +70,57 @@ def create_app(config_class=Config):
             return render_template("login.html")
         return render_template("login.html")
 
+    @app.route("/register", methods=["GET", "POST"])
+    def register():
+        """Show registration form (GET) or create Coach/Athlete and log in (POST)."""
+        if request.method == "POST":
+            name = request.form.get("name", "").strip()
+            email = request.form.get("email", "").strip()
+            password = request.form.get("password", "")
+            role = request.form.get("role", "").strip().lower()
+            if not name or not email or not password:
+                flash("Name, email, and password are required.", "error")
+                teams = Team.query.order_by(Team.name).all()
+                return render_template("register.html", teams=teams)
+            if role == "coach":
+                if Coach.query.filter_by(email=email).first():
+                    flash("An account with that email already exists.", "error")
+                    return render_template("register.html", teams=Team.query.order_by(Team.name).all())
+                coach = Coach(name=name, email=email)
+                coach.set_password(password)
+                db.session.add(coach)
+                db.session.commit()
+                login_user(coach)
+                flash("Account created. Welcome!", "success")
+                return redirect(url_for("coach_dashboard"))
+            if role == "athlete":
+                team_id = request.form.get("team_id", type=int)
+                if not team_id:
+                    flash("Please select a team.", "error")
+                    teams = Team.query.order_by(Team.name).all()
+                    return render_template("register.html", teams=teams)
+                team = Team.query.get(team_id)
+                if not team:
+                    flash("Invalid team.", "error")
+                    teams = Team.query.order_by(Team.name).all()
+                    return render_template("register.html", teams=teams)
+                if Athlete.query.filter_by(email=email).first():
+                    flash("An account with that email already exists.", "error")
+                    teams = Team.query.order_by(Team.name).all()
+                    return render_template("register.html", teams=teams)
+                athlete = Athlete(name=name, email=email, team_id=team_id)
+                athlete.set_password(password)
+                db.session.add(athlete)
+                db.session.commit()
+                login_user(athlete)
+                flash("Account created. Welcome!", "success")
+                return redirect(url_for("athlete_dashboard"))
+            flash("Please select coach or athlete.", "error")
+            teams = Team.query.order_by(Team.name).all()
+            return render_template("register.html", teams=teams)
+        teams = Team.query.order_by(Team.name).all()
+        return render_template("register.html", teams=teams)
+
     @app.route("/logout")
     def logout():
         """Clear session and redirect to homepage or login."""

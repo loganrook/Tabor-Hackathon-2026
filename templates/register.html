@@ -1,0 +1,55 @@
+{# register.html — Registration form.
+   Purpose: Register as coach or athlete; name, email, password, role; team selection when athlete.
+   Who works here: Frontend.
+   Responsibilities: Form posts to register route; team dropdown shown when athlete selected. #}
+{% extends "base.html" %}
+{% block title %}Register — Coach–Athlete App{% endblock %}
+
+{% block content %}
+<h1>Register</h1>
+<form action="{{ url_for('register') }}" method="post" class="register-form" id="register-form">
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" required>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" name="email" required>
+
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" required>
+
+    <label>Role</label>
+    <div class="role-options">
+        <label><input type="radio" name="role" value="coach" checked> Coach</label>
+        <label><input type="radio" name="role" value="athlete"> Athlete</label>
+    </div>
+
+    <div id="team-field" class="team-field" style="display: none;">
+        <label for="team_id">Team</label>
+        <select id="team_id" name="team_id">
+            <option value="">Select a team</option>
+            {% for team in teams %}
+            <option value="{{ team.id }}">{{ team.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <button type="submit">Register</button>
+</form>
+<p>Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+
+<script>
+(function() {
+    var form = document.getElementById('register-form');
+    var roleInputs = form.querySelectorAll('input[name="role"]');
+    var teamField = document.getElementById('team-field');
+    var teamSelect = document.getElementById('team_id');
+    function toggleTeam() {
+        var isAthlete = form.querySelector('input[name="role"]:checked').value === 'athlete';
+        teamField.style.display = isAthlete ? 'block' : 'none';
+        teamSelect.required = isAthlete;
+    }
+    roleInputs.forEach(function(r) { r.addEventListener('change', toggleTeam); });
+    toggleTeam();
+})();
+</script>
+{% endblock %}
