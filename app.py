@@ -105,6 +105,15 @@ def create_app(config_class=Config):
             return render_template("login.html")
         return render_template("login.html")
 
+    @app.route("/register/choose-role")
+    def choose_role():
+        """Intermediate sign-up step: pick Coach or Athlete before registration."""
+        if current_user.is_authenticated:
+            if isinstance(current_user, Coach):
+                return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("athlete_dashboard"))
+        return render_template("choose_role.html")
+
     @app.route("/register", methods=["GET", "POST"])
     def register():
         """Show registration form (GET) or create Coach/Athlete and log in (POST)."""

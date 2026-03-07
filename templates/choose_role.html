@@ -1,0 +1,13 @@
+{# choose_role.html — Intermediate step: Coach or Athlete? #}
+{% extends "base.html" %}
+{% block title %}Sign up — CoachHub{% endblock %}
+{% block content %}
+<div class="hero-block">
+    <h1>I am a…</h1>
+    <div class="hero-buttons">
+        <a href="{{ url_for('register', role='coach') }}" class="btn-hero">Coach</a>
+        <a href="{{ url_for('register', role='athlete') }}" class="btn-hero">Athlete</a>
+    </div>
+    <p class="auth-footer" style="margin-top: 2rem;">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+</div>
+{% endblock %}

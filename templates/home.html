@@ -1,12 +1,12 @@
-{# home.html — Landing: one headline, two role buttons. #}
+{# home.html — Landing: headline, Login and Sign Up buttons. #}
 {% extends "base.html" %}
 {% block title %}CoachHub{% endblock %}
 {% block content %}
 <div class="hero-block">
     <h1>Connect with your coach and team.</h1>
     <div class="hero-buttons">
-        <a href="{{ url_for('register', role='coach') }}" class="btn-hero">I'm a Coach</a>
-        <a href="{{ url_for('register', role='athlete') }}" class="btn-hero">I'm an Athlete</a>
+        <a href="{{ url_for('login') }}" class="btn-hero">Log in</a>
+        <a href="{{ url_for('choose_role') }}" class="btn-hero">Sign up</a>
     </div>
 </div>
 {% endblock %}
