@@ -41,6 +41,16 @@ def create_app(config_class=Config):
             return Athlete.query.get(pk)
         return None
 
+    def _user_can_access_team(team):
+        """Return True if current_user is the coach of this team or an athlete in it."""
+        if not team or not current_user.is_authenticated:
+            return False
+        if isinstance(current_user, Coach) and team.coach_id == current_user.id:
+            return True
+        if isinstance(current_user, Athlete):
+            return current_user.teams.filter(Team.id == team.id).first() is not None
+        return False
+
     # ---------- Routes ----------
 
     @app.route("/")
@@ -112,6 +122,27 @@ def create_app(config_class=Config):
         """Clear session and redirect to homepage or login."""
         logout_user()
         return redirect(url_for("index"))
+
+    @app.route("/team/<int:team_id>")
+    @login_required
+    def team_dashboard(team_id):
+        """Team dashboard: team name, roster, assignments. Coach sees edit links; athlete read-only."""
+        team = Team.query.get_or_404(team_id)
+        if not _user_can_access_team(team):
+            flash("You do not have access to this team.", "error")
+            if isinstance(current_user, Coach):
+                return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("athlete_dashboard"))
+        athletes = team.athletes.all()
+        assignments = []
+        is_coach = isinstance(current_user, Coach) and team.coach_id == current_user.id
+        return render_template(
+            "team_dashboard.html",
+            team=team,
+            athletes=athletes,
+            assignments=assignments,
+            is_coach=is_coach,
+        )
 
     @app.route("/coach/dashboard")
     @login_required
