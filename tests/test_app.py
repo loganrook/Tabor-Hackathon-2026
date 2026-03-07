@@ -1,53 +1,43 @@
 """
-test_app.py — Integration/route tests for the Flask application.
+test_app.py — Lightweight route tests for the Flask application.
 
-Purpose: Test HTTP routes (status codes, redirects, rendered content).
-Who works here: Backend / QA.
-Responsibilities: Use test client; cover homepage, login, logout, dashboards, roster, add athlete.
+These tests are intentionally minimal: they exercise a few core routes
+to catch obvious regressions (homepage, login page, and a protected
+dashboard route redirecting when unauthenticated).
 """
 
 import pytest
 
-# TODO: from app import create_app; app = create_app(); client = app.test_client()
+from app import create_app
 
 
-def test_homepage_returns_200():
-    """Test that GET / returns 200 and renders the home page."""
-    # TODO: client.get('/'); assert response.status_code == 200
-    assert True
+@pytest.fixture(scope="module")
+def client():
+    app = create_app()
+    app.config["TESTING"] = True
+    with app.test_client() as client:
+        yield client
 
 
-def test_login_page_returns_200():
-    """Test that GET /login returns 200 and shows login form."""
-    # TODO: client.get('/login'); assert 200 and b'email' or b'password' in response.data
-    assert True
+def test_homepage_returns_200(client):
+    """GET / should return 200 and render the home page."""
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert b"GamePlan" in resp.data
 
 
-def test_logout_redirects():
-    """Test that GET /logout redirects to index or login."""
-    # TODO: client.get('/logout'); assert redirect
-    assert True
+def test_login_page_returns_200(client):
+    """GET /login should return 200 and show the login form."""
+    resp = client.get("/login")
+    assert resp.status_code == 200
+    assert b"Log in" in resp.data
 
 
-def test_coach_dashboard_accessible():
-    """Test that /coach/dashboard returns 200 (or 302 if login required)."""
-    # TODO: client.get('/coach/dashboard'); assert 200 or 302
-    assert True
-
-
-def test_athlete_dashboard_accessible():
-    """Test that /athlete/dashboard returns 200 (or 302 if login required)."""
-    # TODO: client.get('/athlete/dashboard'); assert 200 or 302
-    assert True
-
-
-def test_roster_page_returns_200():
-    """Test that GET /roster returns 200."""
-    # TODO: client.get('/roster'); assert 200
-    assert True
-
-
-def test_add_athlete_get_returns_200():
-    """Test that GET /roster/add returns 200 or redirects."""
-    # TODO: client.get('/roster/add'); assert 200 or 302
-    assert True
+def test_dashboard_requires_login_redirects(client):
+    """
+    GET /dashboard without being logged in should redirect to login.
+    Flask-Login's @login_required handles this redirect.
+    """
+    resp = client.get("/dashboard", follow_redirects=False)
+    assert resp.status_code in (302, 303)
+    assert "/login" in resp.headers.get("Location", "")

@@ -12,7 +12,7 @@ import os
 class Config:
     """Flask application configuration. Load in app.py via app.config.from_object(Config)."""
 
-    # TODO: Use a strong secret in production (e.g. os.environ['SECRET_KEY'])
+    # Use a strong secret in production (e.g. set SECRET_KEY env var)
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
 
     # SQLite database; file created in project root as app.db
@@ -21,7 +21,8 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Optional Flask settings (placeholders)
-    # DEBUG = False
+    # Enable debug mode only when FLASK_DEBUG=1 (do not use in production)
+    DEBUG = os.environ.get("FLASK_DEBUG", "0") == "1"
+
     # SESSION_COOKIE_SECURE = True  # Set True when using HTTPS
     # SESSION_COOKIE_HTTPONLY = True

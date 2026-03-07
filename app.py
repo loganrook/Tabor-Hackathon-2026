@@ -939,6 +939,28 @@ def create_app(config_class=Config):
         flash("Announcement deleted.", "success")
         return redirect(url_for("team_dashboard", team_id=team.id))
 
+    @app.errorhandler(404)
+    def not_found(error):
+        return (
+            render_template(
+                "error.html",
+                code=404,
+                message="That page could not be found.",
+            ),
+            404,
+        )
+
+    @app.errorhandler(500)
+    def server_error(error):
+        return (
+            render_template(
+                "error.html",
+                code=500,
+                message="Something went wrong on our side. Please try again.",
+            ),
+            500,
+        )
+
     with app.app_context():
         db.create_all()
 

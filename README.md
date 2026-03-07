@@ -54,6 +54,12 @@ python -m pytest tests/ -v
 
 Tests are stubs for now; implement them as you add features (e.g. login, DB operations).
 
+## Configuration
+
+- **SECRET_KEY**: Set the `SECRET_KEY` environment variable in any non-local environment so sessions and cookies are properly secured. The dev default is only for local use.
+- **DATABASE_URL**: Override the default SQLite database by setting `DATABASE_URL` (e.g. to a Postgres URI) if you deploy beyond a single-machine demo.
+- **FLASK_DEBUG**: Debug mode is enabled only when `FLASK_DEBUG=1`. Do not set this in production; leave it unset (or `0`) so detailed stack traces are not exposed and the custom 404/500 pages are used instead.
+
 ## Team dashboard UI
 
 - **Calendar**: The team dashboard calendar now starts weeks on Sunday, stretches rows to fill the available height, and shows a tiny preview of the first assignment title inside each day cell so coaches can quickly scan what’s coming.
