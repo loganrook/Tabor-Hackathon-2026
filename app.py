@@ -245,7 +245,7 @@ def create_app(config_class=Config):
     @app.route("/team/<int:team_id>/settings", methods=["GET", "POST"])
     @login_required
     def team_settings(team_id):
-        """Coach only: invite code, edit team name, manage groups, delete team."""
+        """Coach only: invite code, edit team name, delete team."""
         team = Team.query.get_or_404(team_id)
         if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
             flash("You do not have access to team settings.", "error")
@@ -275,12 +275,7 @@ def create_app(config_class=Config):
                 db.session.commit()
                 flash("Team deleted.", "success")
                 return redirect(url_for("dashboard"))
-        groups = team.groups.order_by(Group.name).all()
-        return render_template(
-            "team_settings.html",
-            team=team,
-            groups=groups,
-        )
+        return render_template("team_settings.html", team=team)
 
     @app.route("/team/<int:team_id>")
     @login_required

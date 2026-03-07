@@ -1,4 +1,4 @@
-{# team_settings.html — Coach only: invite code, edit name, manage groups, delete team. #}
+{# team_settings.html — Coach only: invite code, edit name, delete team. #}
 {% extends "base.html" %}
 {% block title %}Team Settings — {{ team.name }}{% endblock %}
 {% block content %}
@@ -23,20 +23,6 @@
                 </div>
                 <button type="submit" class="btn-primary">Save name</button>
             </form>
-        </section>
-
-        <section class="settings-section">
-            <h2 class="settings-heading">Manage groups</h2>
-            <p><a href="{{ url_for('create_group', team_id=team.id) }}" class="btn-secondary btn-small">Create group</a></p>
-            {% if groups %}
-            <ul class="settings-list">
-                {% for g in groups %}
-                <li><a href="{{ url_for('manage_group', team_id=team.id, group_id=g.id) }}">{{ g.name }}</a> ({{ g.athletes.count() }} member{{ 's' if g.athletes.count() != 1 else '' }})</li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="text-muted">No groups yet. Create position groups and assign athletes.</p>
-            {% endif %}
         </section>
 
         <section class="settings-section danger-zone">
