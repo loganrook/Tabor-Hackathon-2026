@@ -126,7 +126,7 @@ def create_app(config_class=Config):
     @app.route("/team/<int:team_id>")
     @login_required
     def team_dashboard(team_id):
-        """Team dashboard: roster and assignments. Coach sees edit controls, athlete read-only."""
+        """Team dashboard: team name, roster, assignments. Coach sees edit links; athlete read-only."""
         team = Team.query.get_or_404(team_id)
         if not _user_can_access_team(team):
             flash("You do not have access to this team.", "error")

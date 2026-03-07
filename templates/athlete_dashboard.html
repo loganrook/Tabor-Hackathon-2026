@@ -1,19 +1,47 @@
 {# athlete_dashboard.html — Athlete home: list of teams as cards/links. #}
 {% extends "base.html" %}
-{% block title %}Athlete Dashboard — Coach–Athlete App{% endblock %}
+{% block title %}Athlete Dashboard — CoachHub{% endblock %}
 
 {% block content %}
-<h1>My teams</h1>
-<p><a href="{{ url_for('join_team') }}">Join a team</a></p>
+<div class="dash-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h1><i class="bi bi-speedometer2 text-primary"></i> Athlete Dashboard</h1>
+    <a href="{{ url_for('join_team') }}" class="btn btn-primary action-btn">
+        <i class="bi bi-box-arrow-in-right"></i> Join a Team
+    </a>
+</div>
+
+<h2 class="section-heading"><i class="bi bi-flag"></i> My Teams</h2>
+
 {% if teams %}
-<ul class="team-cards">
+<div class="row g-3 mb-4">
     {% for team in teams %}
-    <li class="team-card">
-        <a href="{{ url_for('team_dashboard', team_id=team.id) }}">{{ team.name }}</a>
-    </li>
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-card-link">
+            <div class="card team-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-flag-fill text-primary"></i> {{ team.name }}</h5>
+                    <p class="mb-0 text-muted small">
+                        <i class="bi bi-person"></i> Coach: {{ team.coach.name }}
+                    </p>
+                </div>
+            </div>
+        </a>
+    </div>
     {% endfor %}
-</ul>
+</div>
 {% else %}
-<p>You are not on any teams yet. Use an invite code from your coach to join.</p>
+<div class="empty-state mb-4">
+    <i class="bi bi-flag"></i>
+    <p class="mb-2">You're not on any teams yet.</p>
+    <a href="{{ url_for('join_team') }}" class="btn btn-primary">
+        <i class="bi bi-box-arrow-in-right"></i> Join with an invite code
+    </a>
+</div>
 {% endif %}
+
+<h2 class="section-heading"><i class="bi bi-journal-check"></i> Assignments</h2>
+<div class="empty-state">
+    <i class="bi bi-journal-check"></i>
+    <p>No assignments yet. Check back soon!</p>
+</div>
 {% endblock %}

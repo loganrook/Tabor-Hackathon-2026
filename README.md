@@ -1,12 +1,13 @@
-# Hackathon
+# Hackathon — CoachHub
 
-A coach–athlete management web app built with Flask for a hackathon.
+A coach–athlete management web app built with Flask for a hackathon. Coaches create teams and share invite codes; athletes join teams and view assignments. UI uses Bootstrap 5 and Bootstrap Icons (CoachHub branding).
 
 ## Stack
 
 - **Flask** — web framework
 - **Flask-SQLAlchemy** — ORM and database (SQLite by default)
 - **Flask-Login** — session and login handling
+- **Bootstrap 5** — layout and components; **Bootstrap Icons** — icons
 
 ## Project structure
 
