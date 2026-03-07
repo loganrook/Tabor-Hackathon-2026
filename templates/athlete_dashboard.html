@@ -1,52 +1,19 @@
-{# athlete_dashboard.html — Athlete dashboard.
-   Purpose: Athlete view of assignments and personal info.
-   Who works here: Frontend.
-   Responsibilities: Placeholder section for assignments. #}
+{# athlete_dashboard.html — Athlete home: list of teams as cards/links. #}
 {% extends "base.html" %}
 {% block title %}Athlete Dashboard — Coach–Athlete App{% endblock %}
 
 {% block content %}
-<h1>Athlete Dashboard</h1>
-
-<section class="join-team">
-    <h2>Join a team</h2>
-    <p><a href="{{ url_for('join_team') }}">Join a team with an invite code</a></p>
-</section>
-
-<section class="my-teams">
-    <h2>My teams</h2>
-    {% if teams %}
-    <ul>
-        {% for team in teams %}
-        <li>{{ team.name }}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p>You are not on any teams yet. Use an invite code from your coach to join.</p>
-    {% endif %}
-</section>
-
-<section class="assignments">
-    <h2>Assignments by team</h2>
-    {% if teams %}
+<h1>My teams</h1>
+<p><a href="{{ url_for('join_team') }}">Join a team</a></p>
+{% if teams %}
+<ul class="team-cards">
     {% for team in teams %}
-    <h3>{{ team.name }}</h3>
-    {% set team_assignments = assignments_by_team.get(team.id, []) %}
-    {% if team_assignments %}
-    <ul>
-        {% for a in team_assignments %}
-        <li>
-            <strong>{{ a.title }}</strong>
-            {% if a.description %}<p>{{ a.description }}</p>{% endif %}
-        </li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p>No assignments for this team.</p>
-    {% endif %}
+    <li class="team-card">
+        <a href="{{ url_for('team_dashboard', team_id=team.id) }}">{{ team.name }}</a>
+    </li>
     {% endfor %}
-    {% else %}
-    <p>Join a team to see assignments.</p>
-    {% endif %}
-</section>
+</ul>
+{% else %}
+<p>You are not on any teams yet. Use an invite code from your coach to join.</p>
+{% endif %}
 {% endblock %}

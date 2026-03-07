@@ -4,7 +4,7 @@
 
 {% block content %}
 <h1>Assignments</h1>
-<p><a href="{{ url_for('create_assignment') }}">Create assignment</a></p>
+<p><a href="{{ url_for('coach_dashboard') }}">Go to dashboard</a> to open a team and create assignments.</p>
 {% if assignments %}
 <ul class="assignments-list">
     {% for a in assignments %}
@@ -17,7 +17,7 @@
     {% endfor %}
 </ul>
 {% else %}
-<p>No assignments yet. <a href="{{ url_for('create_assignment') }}">Create one</a>.</p>
+<p>No assignments yet. <a href="{{ url_for('coach_dashboard') }}">Open a team</a> to create one.</p>
 {% endif %}
 <p><a href="{{ url_for('coach_dashboard') }}">Back to dashboard</a></p>
 {% endblock %}

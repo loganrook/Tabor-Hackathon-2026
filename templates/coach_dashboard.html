@@ -1,53 +1,20 @@
-{# coach_dashboard.html — Coach dashboard.
-   Purpose: Roster overview and entry point to add athlete.
-   Who works here: Frontend.
-   Responsibilities: Roster overview section; add-athlete link/form placeholder. #}
+{# coach_dashboard.html — Coach home: list of teams as cards/links. #}
 {% extends "base.html" %}
 {% block title %}Coach Dashboard — Coach–Athlete App{% endblock %}
 
 {% block content %}
-<h1>Coach Dashboard</h1>
-
-<section class="roster-overview">
-    <h2>Teams</h2>
-    {% if teams %}
-    <ul>
-        {% for team in teams %}
-        <li>
-            <strong>{{ team.name }}</strong>
-            — Invite code: <code>{{ team.invite_code }}</code> (share with athletes to join)
-        </li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p>No teams yet. <a href="{{ url_for('create_team') }}">Create a team</a> first.</p>
-    {% endif %}
-</section>
-
-<section class="assignments-overview">
-    <h2>Recent assignments</h2>
-    <p><a href="{{ url_for('create_assignment') }}">Create assignment</a> · <a href="{{ url_for('list_assignments') }}">View all assignments</a></p>
-    {% if teams %}
+<h1>My teams</h1>
+<p><a href="{{ url_for('create_team') }}">Create team</a></p>
+{% if teams %}
+<ul class="team-cards">
     {% for team in teams %}
-    <h3>{{ team.name }}</h3>
-    {% set recent = recent_assignments_by_team.get(team.id, []) %}
-    {% if recent %}
-    <ul>
-        {% for a in recent %}
-        <li><strong>{{ a.title }}</strong>{% if a.description %} — {{ a.description|truncate(80) }}{% endif %}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p>No assignments yet.</p>
-    {% endif %}
+    <li class="team-card">
+        <a href="{{ url_for('team_dashboard', team_id=team.id) }}">{{ team.name }}</a>
+        <span>Invite code: <code>{{ team.invite_code }}</code></span>
+    </li>
     {% endfor %}
-    {% else %}
-    <p>Create a team first to add assignments.</p>
-    {% endif %}
-</section>
-
-<section class="create-team">
-    <h2>Create team</h2>
-    <p><a href="{{ url_for('create_team') }}">Create a new team</a></p>
-</section>
+</ul>
+{% else %}
+<p>No teams yet. Create a team to get started.</p>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,51 @@
+{# team_dashboard.html — Team page (Classroom-style). Roster + assignments; coach gets edit controls. #}
+{% extends "base.html" %}
+{% block title %}{{ team.name }} — Coach–Athlete App{% endblock %}
+
+{% block content %}
+<h1>{{ team.name }}</h1>
+<p><a href="{{ url_for('coach_dashboard') if is_coach else url_for('athlete_dashboard') }}">← Back to my teams</a></p>
+{% if is_coach %}
+<p>Invite code: <code>{{ team.invite_code }}</code> (share with athletes to join)</p>
+{% endif %}
+
+<section class="team-roster">
+    <h2>Roster</h2>
+    {% if is_coach %}
+    <p><a href="{{ url_for('team_roster', team_id=team.id) }}">View / manage roster</a></p>
+    {% endif %}
+    {% if athletes %}
+    <table class="roster-table">
+        <thead>
+            <tr><th>Name</th><th>Email</th></tr>
+        </thead>
+        <tbody>
+            {% for a in athletes %}
+            <tr><td>{{ a.name }}</td><td>{{ a.email }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No athletes on this team yet.</p>
+    {% endif %}
+</section>
+
+<section class="team-assignments">
+    <h2>Assignments</h2>
+    {% if is_coach %}
+    <p><a href="{{ url_for('create_team_assignment', team_id=team.id) }}">Create assignment</a></p>
+    {% endif %}
+    {% if assignments %}
+    <ul>
+        {% for a in assignments %}
+        <li>
+            <strong>{{ a.title }}</strong>
+            {% if a.description %}<p>{{ a.description }}</p>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No assignments yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

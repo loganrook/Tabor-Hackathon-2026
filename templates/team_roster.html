@@ -1,0 +1,22 @@
+{# team_roster.html — Roster for one team. Coach can “manage”, athlete read-only. #}
+{% extends "base.html" %}
+{% block title %}Roster — {{ team.name }}{% endblock %}
+
+{% block content %}
+<h1>Roster — {{ team.name }}</h1>
+<p><a href="{{ url_for('team_dashboard', team_id=team.id) }}">← Back to team</a></p>
+{% if athletes %}
+<table class="roster-table">
+    <thead>
+        <tr><th>Name</th><th>Email</th></tr>
+    </thead>
+    <tbody>
+        {% for a in athletes %}
+        <tr><td>{{ a.name }}</td><td>{{ a.email }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No athletes on this team yet.</p>
+{% endif %}
+{% endblock %}

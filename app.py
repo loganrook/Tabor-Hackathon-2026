@@ -41,6 +41,16 @@ def create_app(config_class=Config):
             return Athlete.query.get(pk)
         return None
 
+    def _user_can_access_team(team):
+        """Return True if current_user is the coach of this team or an athlete in it."""
+        if not team or not current_user.is_authenticated:
+            return False
+        if isinstance(current_user, Coach) and team.coach_id == current_user.id:
+            return True
+        if isinstance(current_user, Athlete):
+            return current_user.teams.filter(Team.id == team.id).first() is not None
+        return False
+
     # ---------- Routes ----------
 
     @app.route("/")
@@ -113,25 +123,41 @@ def create_app(config_class=Config):
         logout_user()
         return redirect(url_for("index"))
 
+    @app.route("/team/<int:team_id>")
+    @login_required
+    def team_dashboard(team_id):
+        """Team dashboard: roster and assignments. Coach sees edit controls, athlete read-only."""
+        team = Team.query.get_or_404(team_id)
+        if not _user_can_access_team(team):
+            flash("You do not have access to this team.", "error")
+            if isinstance(current_user, Coach):
+                return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("athlete_dashboard"))
+        athletes = team.athletes.all()
+        assignments = (
+            Assignment.query.filter_by(team_id=team_id)
+            .order_by(Assignment.created_at.desc())
+            .all()
+        )
+        is_coach = isinstance(current_user, Coach) and team.coach_id == current_user.id
+        return render_template(
+            "team_dashboard.html",
+            team=team,
+            athletes=athletes,
+            assignments=assignments,
+            is_coach=is_coach,
+        )
+
     @app.route("/coach/dashboard")
     @login_required
     def coach_dashboard():
-        """Coach-only: roster overview, assignments, and quick actions."""
+        """Coach dashboard: list of teams as cards/links. Redirect to team if only one."""
         if not isinstance(current_user, Coach):
             return redirect(url_for("athlete_dashboard"))
         teams = current_user.teams.all()
-        recent_assignments_by_team = {
-            t.id: Assignment.query.filter_by(team_id=t.id)
-            .order_by(Assignment.created_at.desc())
-            .limit(5)
-            .all()
-            for t in teams
-        }
-        return render_template(
-            "coach_dashboard.html",
-            teams=teams,
-            recent_assignments_by_team=recent_assignments_by_team,
-        )
+        if len(teams) == 1:
+            return redirect(url_for("team_dashboard", team_id=teams[0].id))
+        return render_template("coach_dashboard.html", teams=teams)
 
     @app.route("/team/create", methods=["GET", "POST"])
     @login_required
@@ -158,18 +184,31 @@ def create_app(config_class=Config):
     @app.route("/athlete/dashboard")
     @login_required
     def athlete_dashboard():
-        """Athlete-only: view assignments and personal info."""
+        """Athlete dashboard: list of teams as cards/links. Redirect to team if only one."""
         if not isinstance(current_user, Athlete):
             return redirect(url_for("coach_dashboard"))
         teams = current_user.teams.all()
-        assignments_by_team = {
-            t.id: t.assignments.order_by(Assignment.created_at.desc()).all()
-            for t in teams
-        }
+        if len(teams) == 1:
+            return redirect(url_for("team_dashboard", team_id=teams[0].id))
+        return render_template("athlete_dashboard.html", teams=teams)
+
+    @app.route("/team/<int:team_id>/roster")
+    @login_required
+    def team_roster(team_id):
+        """Roster for a specific team. Coach or athlete with access."""
+        team = Team.query.get_or_404(team_id)
+        if not _user_can_access_team(team):
+            flash("You do not have access to this team.", "error")
+            if isinstance(current_user, Coach):
+                return redirect(url_for("coach_dashboard"))
+            return redirect(url_for("athlete_dashboard"))
+        athletes = team.athletes.all()
+        is_coach = isinstance(current_user, Coach) and team.coach_id == current_user.id
         return render_template(
-            "athlete_dashboard.html",
-            teams=teams,
-            assignments_by_team=assignments_by_team,
+            "team_roster.html",
+            team=team,
+            athletes=athletes,
+            is_coach=is_coach,
         )
 
     @app.route("/roster")
@@ -217,24 +256,20 @@ def create_app(config_class=Config):
             return redirect(url_for("athlete_dashboard"))
         return render_template("join_team.html")
 
-    @app.route("/assignments/create", methods=["GET", "POST"])
+    @app.route("/team/<int:team_id>/assignment/create", methods=["GET", "POST"])
     @login_required
-    def create_assignment():
-        """Coach-only: form to create an assignment (GET) or create and redirect (POST)."""
-        if not isinstance(current_user, Coach):
-            return redirect(url_for("athlete_dashboard"))
-        teams = current_user.teams.all()
+    def create_team_assignment(team_id):
+        """Coach-only: create an assignment for this team. Redirects to team dashboard."""
+        team = Team.query.get_or_404(team_id)
+        if not isinstance(current_user, Coach) or team.coach_id != current_user.id:
+            flash("You cannot create assignments for this team.", "error")
+            return redirect(url_for("coach_dashboard"))
         if request.method == "POST":
             title = request.form.get("title", "").strip()
             description = request.form.get("description", "").strip() or None
-            team_id = request.form.get("team_id", type=int)
-            if not title or not team_id:
-                flash("Title and team are required.", "error")
-                return render_template("create_assignment.html", teams=teams)
-            team = Team.query.get(team_id)
-            if not team or team.coach_id != current_user.id:
-                flash("Invalid team.", "error")
-                return render_template("create_assignment.html", teams=teams)
+            if not title:
+                flash("Title is required.", "error")
+                return render_template("create_assignment.html", team=team)
             assignment = Assignment(
                 title=title,
                 description=description,
@@ -244,8 +279,8 @@ def create_app(config_class=Config):
             db.session.add(assignment)
             db.session.commit()
             flash("Assignment created.", "success")
-            return redirect(url_for("coach_dashboard"))
-        return render_template("create_assignment.html", teams=teams)
+            return redirect(url_for("team_dashboard", team_id=team_id))
+        return render_template("create_assignment.html", team=team)
 
     @app.route("/assignments")
     @login_required
