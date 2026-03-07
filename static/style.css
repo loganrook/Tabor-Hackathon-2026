@@ -1140,6 +1140,10 @@ body.auth-dark .password-requirements li:last-child::after {
     color: var(--primary);
 }
 
+.back-link-small {
+    font-size: 0.8rem;
+}
+
 /* ── Section spacing ── */
 .section {
     margin-bottom: 2rem;
@@ -1537,12 +1541,6 @@ body.auth-dark .password-requirements li:last-child::after {
     padding: 1.5rem;
 }
 
-.completion-page {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 2rem 2.5rem;
-}
-
 .completion-page .team-page-subheader {
     margin-bottom: 1rem;
 }
@@ -1753,6 +1751,175 @@ body.auth-dark .password-requirements li:last-child::after {
 .completion-text {
     color: #111827;
     font-size: 0.92rem;
+}
+
+/* Workout completion page: overall progress + columns */
+.completion-page {
+    max-width: none;
+    margin: 0;
+    padding: 2rem 2.5rem;
+}
+
+.completion-overall {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.completion-overall-track {
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.completion-overall-fill {
+    height: 100%;
+    width: 0;
+    background: #27ae60;
+    border-radius: 999px;
+    transition: width 0.35s ease-out;
+}
+
+.completion-overall-text {
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.completion-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.25rem;
+}
+
+@media (max-width: 768px) {
+    .completion-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+.completion-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.completion-column-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.completion-column-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.completion-column-count {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.completion-column-not .completion-column-title {
+    color: #e74c3c;
+}
+
+.completion-column-completed .completion-column-title {
+    color: #27ae60;
+}
+
+.completion-column-body {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.completion-column-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+}
+
+.completion-column-empty-text {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.completion-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.completion-card-not {
+    border-left: 4px solid #e74c3c;
+}
+
+.completion-card-completed {
+    border-left: 4px solid #27ae60;
+}
+
+.completion-card-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+
+.completion-card-not .completion-card-icon {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+}
+
+.completion-card-completed .completion-card-icon {
+    background: rgba(39, 174, 96, 0.12);
+    color: #27ae60;
+}
+
+.completion-card-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.completion-card-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin: 0 0 0.15rem;
+}
+
+.completion-card-groups {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.completion-card-time {
+    margin-top: 0.2rem;
+    font-size: 0.8rem;
+    color: #6b7280;
 }
 
 .completion-modal-backdrop {

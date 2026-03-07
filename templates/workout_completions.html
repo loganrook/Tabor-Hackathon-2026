@@ -10,10 +10,10 @@
         <div class="team-dash-content">
             <div class="team-page-content completion-page">
                 <div class="team-page-subheader">
-                    <a href="{{ url_for('workout_detail', team_id=team.id, workout_id=workout.id) }}" class="back-link">← Back to workout</a>
+                    <a href="{{ url_for('workout_detail', team_id=team.id, workout_id=workout.id) }}" class="back-link back-link-small">← Back to workout</a>
                 </div>
 
-                <h2 class="team-page-heading workout-detail-title">Workout: {{ workout.title }}</h2>
+                <h2 class="team-page-heading workout-detail-title">{{ workout.title }}</h2>
 
                 <p class="workout-badges">
                     {% if workout.group_id and workout.group %}
@@ -26,47 +26,71 @@
                     {% endif %}
                 </p>
 
-                <div class="completion-layout">
-                    <section class="completion-section">
-                        <h3 class="completion-section-title">
-                            Completed ({{ completed_athletes|length }})
-                        </h3>
-                        {% if completed_athletes %}
-                        <ul class="completion-list">
-                            {% for row in completed_athletes %}
-                            <li class="completion-row">
-                                <span class="completion-status-icon">✓</span>
-                                <span class="completion-text">
-                                    {{ row.athlete.name }} — {{ row.group_label }}
-                                    {% if row.completed_at %}
-                                    — Completed {{ row.completed_at|fmt_datetime }}
-                                    {% endif %}
-                                </span>
-                            </li>
+                {% set completed_count = completed_athletes|length %}
+                {% set not_completed_count = not_completed_athletes|length %}
+                {% set total_athletes = completed_count + not_completed_count %}
+                {% set pct = (completed_count / total_athletes * 100) if total_athletes > 0 else 0 %}
+
+                <div class="completion-overall">
+                    <div class="completion-overall-track">
+                        <div class="completion-overall-fill" style="width: {{ '%.0f' % pct }}%;"></div>
+                    </div>
+                    <p class="completion-overall-text">
+                        {{ completed_count }} of {{ total_athletes }} athlete{{ '' if total_athletes == 1 else 's' }} completed
+                    </p>
+                </div>
+
+                <div class="completion-columns">
+                    <section class="completion-column completion-column-not">
+                        <div class="completion-column-header">
+                            <h3 class="completion-column-title">Not Completed</h3>
+                            <span class="completion-column-count">{{ not_completed_count }}</span>
+                        </div>
+                        {% if not_completed_athletes %}
+                        <div class="completion-column-body">
+                            {% for row in not_completed_athletes %}
+                            <div class="completion-card completion-card-not">
+                                <div class="completion-card-icon">✕</div>
+                                <div class="completion-card-main">
+                                    <div class="completion-card-name">{{ row.athlete.name }}</div>
+                                    <div class="completion-card-groups">{{ row.group_label }}</div>
+                                </div>
+                            </div>
                             {% endfor %}
-                        </ul>
+                        </div>
                         {% else %}
-                        <p class="empty-state empty-state-compact">No athletes have completed this workout yet.</p>
+                        <div class="completion-column-empty">
+                            <p class="completion-column-empty-text">No athletes outstanding.</p>
+                        </div>
                         {% endif %}
                     </section>
 
-                    <section class="completion-section">
-                        <h3 class="completion-section-title">
-                            Not Completed ({{ not_completed_athletes|length }})
-                        </h3>
-                        {% if not_completed_athletes %}
-                        <ul class="completion-list">
-                            {% for row in not_completed_athletes %}
-                            <li class="completion-row">
-                                <span class="completion-status-icon completion-status-missing">✕</span>
-                                <span class="completion-text">
-                                    {{ row.athlete.name }} — {{ row.group_label }}
-                                </span>
-                            </li>
+                    <section class="completion-column completion-column-completed">
+                        <div class="completion-column-header">
+                            <h3 class="completion-column-title">Completed</h3>
+                            <span class="completion-column-count">{{ completed_count }}</span>
+                        </div>
+                        {% if completed_athletes %}
+                        <div class="completion-column-body">
+                            {% for row in completed_athletes %}
+                            <div class="completion-card completion-card-completed">
+                                <div class="completion-card-icon">✓</div>
+                                <div class="completion-card-main">
+                                    <div class="completion-card-name">{{ row.athlete.name }}</div>
+                                    <div class="completion-card-groups">{{ row.group_label }}</div>
+                                    {% if row.completed_at %}
+                                    <div class="completion-card-time">
+                                        Completed {{ row.completed_at|fmt_datetime }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
                             {% endfor %}
-                        </ul>
+                        </div>
                         {% else %}
-                        <p class="empty-state empty-state-compact">Everyone assigned has completed this workout. 🎉</p>
+                        <div class="completion-column-empty">
+                            <p class="completion-column-empty-text">No completed athletes yet.</p>
+                        </div>
                         {% endif %}
                     </section>
                 </div>
