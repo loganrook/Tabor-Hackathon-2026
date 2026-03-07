@@ -36,6 +36,15 @@ def create_app(config_class=Config):
     login_manager.login_view = "login"
     login_manager.login_message = "Please log in to access this page."
 
+    @app.template_filter("fmt_datetime")
+    def fmt_datetime(dt):
+        """Format datetime as 'March 7, 2026 at 11:59 PM' (12-hour, no leading zero on hour)."""
+        if dt is None:
+            return ""
+        h = dt.hour % 12 or 12
+        ampm = "AM" if dt.hour < 12 else "PM"
+        return dt.strftime("%B %d, %Y at ") + f"{h}:{dt.minute:02d} {ampm}"
+
     @login_manager.user_loader
     def load_user(user_id: str):
         """Load Coach or Athlete by id; user_id is 'coach-{id}' or 'athlete-{id}'."""
@@ -166,7 +175,7 @@ def create_app(config_class=Config):
         )
         is_coach = isinstance(current_user, Coach) and team.coach_id == current_user.id
 
-        # Athlete: only see team-wide assignments + assignments for groups they're in
+        # Athlete: only see team-wide, group (they're in), or individual (assigned to them)
         if is_coach:
             assignments = all_assignments
         else:
@@ -176,7 +185,9 @@ def create_app(config_class=Config):
             assignments = [
                 a
                 for a in all_assignments
-                if a.group_id is None or a.group_id in athlete_group_ids
+                if a.athlete_id == current_user.id
+                or a.group_id is None
+                or a.group_id in athlete_group_ids
             ]
 
         # Coach: completion counts per assignment (completed, total)
@@ -421,37 +432,52 @@ def create_app(config_class=Config):
             due_str = request.form.get("due_date", "").strip()
             if due_str:
                 try:
-                    due_date = datetime.strptime(due_str, "%Y-%m-%dT%H:%M")
+                    due_date = datetime.strptime(due_str, "%Y-%m-%d").replace(
+                        hour=23, minute=59, second=0, microsecond=0
+                    )
                 except ValueError:
-                    try:
-                        due_date = datetime.strptime(due_str, "%Y-%m-%d")
-                    except ValueError:
-                        pass
-            group_id = request.form.get("group_id", "").strip() or None
-            if group_id:
+                    pass
+            assign_to = request.form.get("assign_to", "").strip()
+            group_id = None
+            athlete_id = None
+            if assign_to.startswith("g"):
                 try:
-                    group_id = int(group_id)
+                    group_id = int(assign_to[1:])
                     g = Group.query.filter_by(id=group_id, team_id=team_id).first()
                     if not g:
                         group_id = None
                 except (ValueError, TypeError):
                     group_id = None
+            elif assign_to.startswith("a"):
+                try:
+                    athlete_id = int(assign_to[1:])
+                    ath = Athlete.query.get(athlete_id)
+                    if not ath or not ath.teams.filter(Team.id == team_id).first():
+                        athlete_id = None
+                except (ValueError, TypeError):
+                    athlete_id = None
             if not title:
                 flash("Title is required.", "error")
                 return render_template(
-                    "create_assignment.html", team=team, groups=team.groups.order_by(Group.name).all()
+                    "create_assignment.html",
+                    team=team,
+                    groups=team.groups.order_by(Group.name).all(),
+                    athletes=team.athletes.order_by(Athlete.name).all(),
                 )
             assignment = Assignment(
                 title=title,
                 description=description,
                 due_date=due_date,
                 team_id=team_id,
-                group_id=group_id,
+                group_id=group_id if not athlete_id else None,
+                athlete_id=athlete_id,
                 created_by=current_user.id,
             )
             db.session.add(assignment)
             db.session.flush()
-            if group_id:
+            if athlete_id:
+                target_athletes = [Athlete.query.get(athlete_id)]
+            elif group_id:
                 group = Group.query.get(group_id)
                 target_athletes = group.athletes.all()
             else:
@@ -470,6 +496,7 @@ def create_app(config_class=Config):
             "create_assignment.html",
             team=team,
             groups=team.groups.order_by(Group.name).all(),
+            athletes=team.athletes.order_by(Athlete.name).all(),
         )
 
     @app.route("/assignment/<int:assignment_id>/complete", methods=["POST"])
@@ -492,12 +519,12 @@ def create_app(config_class=Config):
                 assignment_id=assignment_id,
                 athlete_id=current_user.id,
                 completed=True,
-                completed_at=datetime.utcnow(),
+                completed_at=datetime.now(),
             )
             db.session.add(status)
         else:
             status.completed = True
-            status.completed_at = datetime.utcnow()
+            status.completed_at = datetime.now()
         db.session.commit()
         flash("Assignment marked complete.", "success")
         return redirect(url_for("team_dashboard", team_id=assignment.team_id))

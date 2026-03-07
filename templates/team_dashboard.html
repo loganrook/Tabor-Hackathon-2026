@@ -61,7 +61,7 @@
                 {% for ann in announcements %}
                 <div class="announcement-card">
                     <p class="announcement-content">{{ ann.content }}</p>
-                    <p class="announcement-meta">{{ ann.created_at.strftime('%b %d, %Y at %H:%M') if ann.created_at else '' }}</p>
+                    <p class="announcement-meta">{{ ann.created_at|fmt_datetime }}</p>
                 </div>
                 {% endfor %}
             </div>
@@ -105,8 +105,17 @@
                 {% for a in assignments %}
                 <div class="assignment-card {{ 'assignment-card-completed' if not is_coach and assignment_status_by_athlete.get(a.id) and assignment_status_by_athlete[a.id].completed else '' }}">
                     <p class="assignment-title">{{ a.title }}</p>
+                    <p class="assignment-badges">
+                        {% if a.athlete_id and a.athlete %}
+                        <span class="assignment-badge assignment-badge-individual">{{ a.athlete.name }}</span>
+                        {% elif a.group_id and a.group %}
+                        <span class="assignment-badge assignment-badge-group">{{ a.group.name }}</span>
+                        {% else %}
+                        <span class="assignment-badge assignment-badge-team">Entire Team</span>
+                        {% endif %}
+                    </p>
                     {% if a.description %}<p class="assignment-desc">{{ a.description }}</p>{% endif %}
-                    {% if a.due_date %}<p class="assignment-due">Due {{ a.due_date.strftime('%b %d, %Y at %H:%M') }}</p>{% endif %}
+                    {% if a.due_date %}<p class="assignment-due">Due {{ a.due_date|fmt_datetime }}</p>{% endif %}
                     {% if is_coach %}
                     {% set completion = assignment_completion.get(a.id, (0, 0)) %}
                     <div class="assignment-progress">
@@ -148,7 +157,7 @@
         today: "{{ cal_year }}-{% if cal_month < 10 %}0{% endif %}{{ cal_month }}-{% if cal_today < 10 %}0{% endif %}{{ cal_today }}",
         assignments: [
             {% for a in assignments %}
-            { "id": {{ a.id }}, "title": {{ a.title|tojson }}, "description": {{ (a.description or '')|tojson }}, "due_date": {% if a.due_date %}"{{ a.due_date.strftime('%Y-%m-%d') }}"{% else %}null{% endif %}, "due_display": {% if a.due_date %}{{ a.due_date.strftime('%b %d, %Y at %H:%M')|tojson }}{% else %}null{% endif %} }{% if not loop.last %},{% endif %}
+            { "id": {{ a.id }}, "title": {{ a.title|tojson }}, "description": {{ (a.description or '')|tojson }}, "due_date": {% if a.due_date %}"{{ a.due_date.strftime('%Y-%m-%d') }}"{% else %}null{% endif %}, "due_display": {% if a.due_date %}{{ (a.due_date|fmt_datetime)|tojson }}{% else %}null{% endif %} }{% if not loop.last %},{% endif %}
             {% endfor %}
         ],
         announcements: [

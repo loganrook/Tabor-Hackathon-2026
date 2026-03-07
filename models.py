@@ -16,6 +16,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db
 
 
+def _local_now():
+    """Return naive local datetime for created_at / completed_at (hackathon: no timezone)."""
+    return datetime.now()
+
+
 # Many-to-many: athletes can be on multiple teams
 athlete_teams = db.Table(
     "athlete_teams",
@@ -40,7 +45,7 @@ class Coach(UserMixin, db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_local_now)
 
     # Relationship: one coach has many teams
     teams = db.relationship("Team", backref="coach", lazy="dynamic", foreign_keys="Team.coach_id")
@@ -67,7 +72,7 @@ class Team(db.Model):
     name = db.Column(db.String(255), nullable=False)
     coach_id = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
     invite_code = db.Column(db.String(8), unique=True, nullable=False, index=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_local_now)
 
     # Many-to-many with Athlete via athlete_teams
     athletes = db.relationship(
@@ -119,7 +124,7 @@ class Group(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_local_now)
 
     athletes = db.relationship(
         "Athlete",
@@ -138,7 +143,7 @@ class Announcement(db.Model):
     content = db.Column(db.Text, nullable=False)
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_local_now)
 
 
 class Assignment(db.Model):
@@ -152,10 +157,12 @@ class Assignment(db.Model):
     due_date = db.Column(db.DateTime, nullable=True)
     team_id = db.Column(db.Integer, db.ForeignKey("teams.id"), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable=True)
+    athlete_id = db.Column(db.Integer, db.ForeignKey("athletes.id"), nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey("coaches.id"), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_local_now)
 
     group = db.relationship("Group", backref="assignments", foreign_keys="Assignment.group_id")
+    athlete = db.relationship("Athlete", backref="individual_assignments", foreign_keys="Assignment.athlete_id")
 
     statuses = db.relationship(
         "AssignmentStatus",
@@ -188,7 +195,7 @@ class Athlete(UserMixin, db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_local_now)
 
     def set_password(self, password: str) -> None:
         """Hash the password and store it in self.password_hash."""

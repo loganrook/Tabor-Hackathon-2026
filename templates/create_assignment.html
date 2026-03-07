@@ -15,16 +15,23 @@
         </div>
         <div class="form-group">
             <label for="assign_to">Assign to</label>
-            <select id="assign_to" name="group_id">
+            <select id="assign_to" name="assign_to">
                 <option value="">Entire Team</option>
                 {% for g in groups %}
-                <option value="{{ g.id }}">{{ g.name }}</option>
+                <option value="g{{ g.id }}">{{ g.name }}</option>
                 {% endfor %}
+                {% if athletes %}
+                <optgroup label="Individual">
+                    {% for a in athletes %}
+                    <option value="a{{ a.id }}">{{ a.name }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endif %}
             </select>
         </div>
         <div class="form-group">
             <label for="due_date">Due date (optional)</label>
-            <input type="datetime-local" id="due_date" name="due_date">
+            <input type="date" id="due_date" name="due_date">
         </div>
         <button type="submit" class="btn-primary">Add assignment</button>
     </form>

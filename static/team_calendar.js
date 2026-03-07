@@ -161,7 +161,11 @@
         if (!iso) return '';
         var d = new Date(iso);
         var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' at ' + (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+        var h = d.getHours();
+        var h12 = (h % 12) || 12;
+        var min = d.getMinutes();
+        var ampm = h < 12 ? 'AM' : 'PM';
+        return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' at ' + h12 + ':' + (min < 10 ? '0' : '') + min + ' ' + ampm;
     }
 
     function escapeHtml(s) {

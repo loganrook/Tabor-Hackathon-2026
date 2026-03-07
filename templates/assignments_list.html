@@ -12,8 +12,17 @@
     {% for a in assignments %}
     <div class="assignment-card">
         <p class="assignment-title">{{ a.title }}{% if a.team %} ({{ a.team.name }}){% endif %}</p>
+        <p class="assignment-badges">
+            {% if a.athlete_id and a.athlete %}
+            <span class="assignment-badge assignment-badge-individual">{{ a.athlete.name }}</span>
+            {% elif a.group_id and a.group %}
+            <span class="assignment-badge assignment-badge-group">{{ a.group.name }}</span>
+            {% else %}
+            <span class="assignment-badge assignment-badge-team">Entire Team</span>
+            {% endif %}
+        </p>
         {% if a.description %}<p class="assignment-desc">{{ a.description }}</p>{% endif %}
-        {% if a.created_at %}<p class="assignment-date">{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</p>{% endif %}
+        {% if a.created_at %}<p class="assignment-date">{{ a.created_at|fmt_datetime }}</p>{% endif %}
     </div>
     {% endfor %}
 </div>
