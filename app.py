@@ -553,6 +553,153 @@ def create_app(config_class=Config):
             flash("Nothing to undo.", "info")
         return redirect(url_for("team_dashboard", team_id=assignment.team_id))
 
+    def _coach_owns_team(team):
+        """Return True if current_user is the coach who owns the team."""
+        return (
+            current_user.is_authenticated
+            and isinstance(current_user, Coach)
+            and team
+            and team.coach_id == current_user.id
+        )
+
+    @app.route("/assignment/<int:assignment_id>/edit", methods=["GET", "POST"])
+    @login_required
+    def edit_assignment(assignment_id):
+        """Coach only: edit assignment; on POST update and auto-announce."""
+        assignment = Assignment.query.get_or_404(assignment_id)
+        team = assignment.team
+        if not _coach_owns_team(team):
+            flash("You cannot edit this assignment.", "error")
+            return redirect(url_for("coach_dashboard"))
+        if request.method == "POST":
+            title = request.form.get("title", "").strip()
+            description = request.form.get("description", "").strip() or None
+            due_date = None
+            due_str = request.form.get("due_date", "").strip()
+            if due_str:
+                try:
+                    due_date = datetime.strptime(due_str, "%Y-%m-%d").replace(
+                        hour=23, minute=59, second=0, microsecond=0
+                    )
+                except ValueError:
+                    pass
+            assign_to = request.form.get("assign_to", "").strip()
+            group_id = None
+            athlete_id = None
+            if assign_to.startswith("g"):
+                try:
+                    group_id = int(assign_to[1:])
+                    g = Group.query.filter_by(id=group_id, team_id=team.id).first()
+                    if not g:
+                        group_id = None
+                except (ValueError, TypeError):
+                    group_id = None
+            elif assign_to.startswith("a"):
+                try:
+                    athlete_id = int(assign_to[1:])
+                    ath = Athlete.query.get(athlete_id)
+                    if not ath or not ath.teams.filter(Team.id == team.id).first():
+                        athlete_id = None
+                except (ValueError, TypeError):
+                    athlete_id = None
+            if not title:
+                flash("Title is required.", "error")
+                return render_template(
+                    "edit_assignment.html",
+                    assignment=assignment,
+                    team=team,
+                    groups=team.groups.order_by(Group.name).all(),
+                    athletes=team.athletes.order_by(Athlete.name).all(),
+                )
+            assignment.title = title
+            assignment.description = description
+            assignment.due_date = due_date
+            assignment.group_id = group_id if not athlete_id else None
+            assignment.athlete_id = athlete_id
+            db.session.commit()
+            auto_ann = Announcement(
+                content=f"{current_user.name} updated assignment: {assignment.title}",
+                team_id=team.id,
+                created_by=current_user.id,
+                is_auto=True,
+            )
+            db.session.add(auto_ann)
+            db.session.commit()
+            flash("Assignment updated.", "success")
+            return redirect(url_for("team_dashboard", team_id=team.id))
+        return render_template(
+            "edit_assignment.html",
+            assignment=assignment,
+            team=team,
+            groups=team.groups.order_by(Group.name).all(),
+            athletes=team.athletes.order_by(Athlete.name).all(),
+        )
+
+    @app.route("/assignment/<int:assignment_id>/delete", methods=["POST"])
+    @login_required
+    def delete_assignment(assignment_id):
+        """Coach only: delete assignment and its statuses; auto-announce removal."""
+        assignment = Assignment.query.get_or_404(assignment_id)
+        team = assignment.team
+        if not _coach_owns_team(team):
+            flash("You cannot delete this assignment.", "error")
+            return redirect(url_for("coach_dashboard"))
+        title = assignment.title
+        AssignmentStatus.query.filter_by(assignment_id=assignment_id).delete()
+        db.session.delete(assignment)
+        auto_ann = Announcement(
+            content=f"{current_user.name} removed assignment: {title}",
+            team_id=team.id,
+            created_by=current_user.id,
+            is_auto=True,
+        )
+        db.session.add(auto_ann)
+        db.session.commit()
+        flash("Assignment deleted.", "success")
+        return redirect(url_for("team_dashboard", team_id=team.id))
+
+    @app.route("/announcement/<int:announcement_id>/edit", methods=["GET", "POST"])
+    @login_required
+    def edit_announcement(announcement_id):
+        """Coach only: edit announcement content; on POST update and auto-announce."""
+        ann = Announcement.query.get_or_404(announcement_id)
+        team = ann.team
+        if not _coach_owns_team(team):
+            flash("You cannot edit this announcement.", "error")
+            return redirect(url_for("coach_dashboard"))
+        if request.method == "POST":
+            content = request.form.get("content", "").strip()
+            if not content:
+                flash("Announcement cannot be empty.", "error")
+                return render_template("edit_announcement.html", announcement=ann, team=team)
+            ann.content = content
+            db.session.commit()
+            auto_ann = Announcement(
+                content=f"{current_user.name} edited an announcement",
+                team_id=team.id,
+                created_by=current_user.id,
+                is_auto=True,
+            )
+            db.session.add(auto_ann)
+            db.session.commit()
+            flash("Announcement updated.", "success")
+            return redirect(url_for("team_dashboard", team_id=team.id))
+        return render_template("edit_announcement.html", announcement=ann, team=team)
+
+    @app.route("/announcement/<int:announcement_id>/delete", methods=["POST"])
+    @login_required
+    def delete_announcement(announcement_id):
+        """Coach only: delete announcement. No auto-announcement for delete."""
+        ann = Announcement.query.get_or_404(announcement_id)
+        team = ann.team
+        if not _coach_owns_team(team):
+            flash("You cannot delete this announcement.", "error")
+            return redirect(url_for("coach_dashboard"))
+        db.session.delete(ann)
+        db.session.commit()
+        flash("Announcement deleted.", "success")
+        return redirect(url_for("team_dashboard", team_id=team.id))
+
     @app.route("/assignments")
     @login_required
     def list_assignments():

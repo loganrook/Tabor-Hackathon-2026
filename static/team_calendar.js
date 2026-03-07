@@ -145,7 +145,8 @@
             } else {
                 annEl.innerHTML = '<h3 class="calendar-day-subheading">Announcements</h3>' + annList.map(function(ann) {
                     var time = formatAnnouncementTime(ann.created_at);
-                    return '<div class="announcement-card">' +
+                    var autoClass = ann.is_auto ? ' announcement-card-auto' : '';
+                    return '<div class="announcement-card' + autoClass + '">' +
                         '<p class="announcement-content">' + escapeHtml(ann.content) + '</p>' +
                         '<p class="announcement-meta">' + escapeHtml(time) + '</p>' +
                         '</div>';

@@ -781,6 +781,40 @@ body:not(.dashboard-layout) .form-group textarea:focus {
     margin: 0;
 }
 
+.announcement-card-auto {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.announcement-card-auto .announcement-content {
+    font-style: italic;
+}
+
+.announcement-card-auto .announcement-content::before {
+    content: "⊘ ";
+    font-style: normal;
+    color: var(--text-muted);
+    font-size: 0.875em;
+}
+
+.announcement-actions,
+.assignment-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.announcement-actions .btn-small,
+.assignment-actions .btn-small {
+    margin: 0;
+}
+
+.announcement-delete-form,
+.assignment-delete-form {
+    display: inline;
+}
+
 /* ── Assignment progress (coach) ── */
 .assignment-progress {
     margin-top: 0.5rem;
