@@ -755,10 +755,81 @@ body:not(.dashboard-layout) .form-group textarea:focus {
     margin: 0 0 0.25rem;
 }
 
+.assignment-title-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.assignment-title-link:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
 .assignment-card .assignment-desc {
     font-size: 0.875rem;
     color: var(--text-muted);
     margin: 0;
+}
+
+/* ── Assignment completion details (coach) ── */
+.completion-heading {
+    margin-top: 0;
+}
+.completion-due {
+    margin-top: 0.25rem;
+    margin-bottom: 1.5rem;
+}
+.completion-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+.completion-section-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 0.5rem;
+}
+.completion-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+.completion-item {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.5rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    font-size: 0.9375rem;
+}
+.completion-item:last-child {
+    border-bottom: none;
+}
+.completion-icon {
+    color: var(--success-text);
+    font-weight: 700;
+}
+.completion-icon-pending {
+    color: var(--text-muted);
+}
+.completion-name {
+    font-weight: 500;
+    color: var(--text);
+}
+.completion-groups {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+.completion-time {
+    margin-left: auto;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
 }
 
 /* ── Empty state ── */

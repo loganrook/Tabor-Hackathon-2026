@@ -17,7 +17,7 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-    {% if request.endpoint not in ['dashboard', 'team_dashboard', 'team_settings', 'team_roster', 'team_groups'] %}
+    {% if request.endpoint not in ['dashboard', 'team_dashboard', 'team_settings', 'team_roster', 'team_groups', 'assignment_completions'] %}
     <nav class="nav-minimal">
         <a class="nav-logo" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('index') }}">GamePlan</a>
         <div class="nav-right">
@@ -34,7 +34,7 @@
         <main class="content">
     {% endif %}
             {% block content %}{% endblock %}
-    {% if request.endpoint not in ['dashboard', 'team_dashboard', 'team_settings', 'team_roster', 'team_groups'] %}
+    {% if request.endpoint not in ['dashboard', 'team_dashboard', 'team_settings', 'team_roster', 'team_groups', 'assignment_completions'] %}
         </main>
     </div>
     {% endif %}
