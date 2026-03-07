@@ -1557,6 +1557,21 @@ body.auth-dark .password-requirements li:last-child::after {
     color: #111827;
 }
 
+.workout-progress-text-small {
+    margin: 0.1rem 0 0;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.workout-progress-text-small a {
+    color: #4A90D9;
+    text-decoration: none;
+}
+
+.workout-progress-text-small a:hover {
+    text-decoration: underline;
+}
+
 .team-page-heading-row {
     display: flex;
     align-items: center;
@@ -1646,6 +1661,122 @@ body.auth-dark .password-requirements li:last-child::after {
 
 .team-group-delete-form {
     display: inline;
+}
+
+/* Workout completion breakdown (page + modal) */
+.completion-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.completion-section-title {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.completion-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.completion-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+}
+
+.completion-status-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    background: #dcfce7;
+    color: #166534;
+    flex-shrink: 0;
+}
+
+.completion-status-missing {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.completion-text {
+    color: #111827;
+}
+
+.completion-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.completion-modal-hidden {
+    display: none;
+}
+
+.completion-modal {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
+    max-width: 640px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.completion-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.completion-modal-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.completion-modal-body {
+    padding: 1rem 1.1rem 1.1rem;
+    overflow-y: auto;
+}
+
+.completion-modal .completion-section + .completion-section {
+    margin-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 0.9rem;
+}
+
+.completion-clickable {
+    cursor: pointer;
+}
+
+.workout-progress-detail-link {
+    margin-left: 0.3rem;
+    font-size: 0.8rem;
+    color: #4A90D9;
+}
+
+.workout-progress-detail-link:hover {
+    text-decoration: underline;
 }
 
 /* Announce form: collapsed by default, expand on plus click */

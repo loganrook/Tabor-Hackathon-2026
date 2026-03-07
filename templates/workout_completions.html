@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Workout Completions — {{ team.name }}{% endblock %}
+{% block content %}
+<div class="team-dash-wrapper">
+    {% include "_team_sidebar.html" %}
+
+    <main class="team-dash-main">
+        {% include "_team_topbar.html" %}
+
+        <div class="team-dash-content">
+            <div class="team-page-content">
+                <div class="team-page-subheader">
+                    <a href="{{ url_for('workout_detail', team_id=team.id, workout_id=workout.id) }}" class="back-link">← Back to workout</a>
+                </div>
+
+                <h2 class="team-page-heading workout-detail-title">Workout: {{ workout.title }}</h2>
+
+                <p class="workout-badges">
+                    {% if workout.group_id and workout.group %}
+                    <span class="workout-badge workout-badge-group">{{ workout.group.name }}</span>
+                    {% else %}
+                    <span class="workout-badge workout-badge-team">Entire Team</span>
+                    {% endif %}
+                    {% if workout.due_date %}
+                    <span class="workout-due">Due {{ workout.due_date|fmt_datetime }}</span>
+                    {% endif %}
+                </p>
+
+                <div class="completion-layout">
+                    <section class="completion-section">
+                        <h3 class="completion-section-title">
+                            Completed ({{ completed_athletes|length }})
+                        </h3>
+                        {% if completed_athletes %}
+                        <ul class="completion-list">
+                            {% for row in completed_athletes %}
+                            <li class="completion-row">
+                                <span class="completion-status-icon">✓</span>
+                                <span class="completion-text">
+                                    {{ row.athlete.name }} — {{ row.group_label }}
+                                    {% if row.completed_at %}
+                                    — Completed {{ row.completed_at|fmt_datetime }}
+                                    {% endif %}
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="empty-state empty-state-compact">No athletes have completed this workout yet.</p>
+                        {% endif %}
+                    </section>
+
+                    <section class="completion-section">
+                        <h3 class="completion-section-title">
+                            Not Completed ({{ not_completed_athletes|length }})
+                        </h3>
+                        {% if not_completed_athletes %}
+                        <ul class="completion-list">
+                            {% for row in not_completed_athletes %}
+                            <li class="completion-row">
+                                <span class="completion-status-icon completion-status-missing">✕</span>
+                                <span class="completion-text">
+                                    {{ row.athlete.name }} — {{ row.group_label }}
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="empty-state empty-state-compact">Everyone assigned has completed this workout. 🎉</p>
+                        {% endif %}
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
