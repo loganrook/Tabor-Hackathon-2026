@@ -72,6 +72,10 @@
                         <h2 class="team-right-box-title">Announcements</h2>
                         {% if is_coach %}
                         <a href="{{ url_for('create_team_announcement', team_id=team.id) }}" class="team-right-box-plus" aria-label="New Announcement" title="New Announcement"><i class="bi bi-plus-lg"></i></a>
+                        {% else %}
+                        <a href="{{ url_for('team_messages', team_id=team.id) }}" class="btn-secondary btn-small message-coach-btn">
+                            <i class="bi bi-chat-dots"></i> Message Coach
+                        </a>
                         {% endif %}
                     </div>
                     <div class="team-right-box-inner">
