@@ -86,13 +86,30 @@
                         <div class="announcement-list">
                             {% for ann in announcements %}
                             <div class="announcement-card {{ 'announcement-card-auto' if ann.is_auto else '' }}">
+                                {% if ann.is_auto %}
+                                <p class="announcement-system-label">System</p>
+                                {% endif %}
                                 <p class="announcement-content">{{ ann.content }}</p>
-                                <p class="announcement-meta" data-created-at="{{ ann.created_at.isoformat() if ann.created_at else '' }}">
-                                    {% if ann.group_id and ann.group %}
-                                    {{ ann.group.name }} group · <span class="announcement-time-relative" title="{{ ann.created_at|fmt_datetime }}">{{ ann.created_at|fmt_datetime }}</span>
-                                    {% else %}
-                                    Entire Team · <span class="announcement-time-relative" title="{{ ann.created_at|fmt_datetime }}">{{ ann.created_at|fmt_datetime }}</span>
-                                    {% endif %}
+                                <p
+                                    class="announcement-meta"
+                                    data-created-at="{{ ann.created_at.isoformat() if ann.created_at else '' }}"
+                                >
+                                    <span class="announcement-audience">
+                                        {% if ann.group_id and ann.group %}
+                                        {{ ann.group.name }} group
+                                        {% else %}
+                                        Entire Team
+                                        {% endif %}
+                                    </span>
+                                    <span class="announcement-meta-spacer">·</span>
+                                    <span class="announcement-time">
+                                        <span
+                                            class="announcement-time-relative"
+                                            title="{{ ann.created_at|fmt_datetime }}"
+                                        >
+                                            {{ ann.created_at|fmt_datetime }}
+                                        </span>
+                                    </span>
                                 </p>
                                 {% if is_coach %}
                                 <div class="announcement-actions-hover">
