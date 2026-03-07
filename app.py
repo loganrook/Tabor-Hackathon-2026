@@ -967,13 +967,20 @@ def create_app(config_class=Config):
         for group in team.groups.all():
             if athlete in group.athletes.all():
                 group.athletes.remove(athlete)
-        # Remove exercise completion records for this athlete on this team
-        (
-            ExerciseStatus.query.join(Exercise)
-            .join(Workout)
+        # Remove exercise completion records for this athlete on this team.
+        # (Cannot call .delete() on a query that uses .join(); select IDs first, then delete by ID.)
+        ids_to_delete = [
+            row[0]
+            for row in db.session.query(ExerciseStatus.id)
+            .join(Exercise, ExerciseStatus.exercise_id == Exercise.id)
+            .join(Workout, Exercise.workout_id == Workout.id)
             .filter(Workout.team_id == team_id, ExerciseStatus.athlete_id == athlete_id)
-            .delete(synchronize_session=False)
-        )
+            .all()
+        ]
+        if ids_to_delete:
+            ExerciseStatus.query.filter(ExerciseStatus.id.in_(ids_to_delete)).delete(
+                synchronize_session=False
+            )
         db.session.commit()
         flash("Athlete removed from team.", "success")
         return redirect(url_for("team_roster", team_id=team_id))

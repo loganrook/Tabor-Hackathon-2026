@@ -2,15 +2,45 @@
 {% extends "base.html" %}
 {% block title %}Create group — {{ team.name }}{% endblock %}
 {% block content %}
-<div class="auth-card">
-    <h1>Create group</h1>
-    <form action="{{ url_for('create_group', team_id=team.id) }}" method="post">
-        <div class="form-group">
-            <label for="name">Group name</label>
-            <input type="text" id="name" name="name" placeholder="e.g. Quarterbacks, O-Line" required>
+<div class="team-dash-wrapper">
+    {% include '_team_sidebar.html' %}
+
+    <main class="team-dash-main">
+        {% include '_team_topbar.html' %}
+
+        <div class="team-dash-content">
+            <div class="team-page-content">
+                <div class="team-page-heading-row">
+                    <h2 class="team-page-heading">Create group</h2>
+                    <a href="{{ url_for('team_groups', team_id=team.id) }}" class="back-link back-link-small">← Back to groups</a>
+                </div>
+
+                <form action="{{ url_for('create_group', team_id=team.id) }}" method="post">
+                    <div class="form-group">
+                        <label for="name">Group name</label>
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            placeholder="e.g. Quarterbacks, O-Line"
+                            required
+                        >
+                    </div>
+                    <button type="submit" class="btn-primary">Create group</button>
+                </form>
+            </div>
         </div>
-        <button type="submit" class="btn-primary">Create group</button>
-    </form>
-    <p class="auth-footer"><a href="{{ url_for('team_groups', team_id=team.id) }}" class="back-link">← Back to groups</a></p>
+    </main>
 </div>
+<script>
+(function() {
+    var sidebar = document.getElementById('team-sidebar');
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+        });
+    }
+})();
+</script>
 {% endblock %}
