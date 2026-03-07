@@ -1,17 +1,14 @@
-{# team_dashboard.html — Top bar, dark sidebar (Roster, Groups, Settings), main: calendar + announcements + assignments. #}
+{# team_dashboard.html — Top bar (center+right only), sidebar unchanged, center = calendar, right = announcements + assignments. #}
 {% extends "base.html" %}
 {% block title %}{{ team.name }} — CoachHub{% endblock %}
 {% block content %}
+{% set ns = namespace(announcement_days=[]) %}
+{% for ann in announcements %}
+  {% if ann.created_at and ann.created_at.year == cal_year and ann.created_at.month == cal_month %}
+    {% set _ = ns.announcement_days.append(ann.created_at.day) %}
+  {% endif %}
+{% endfor %}
 <div class="team-dash-wrapper">
-    <header class="team-topbar">
-        <button type="button" class="team-topbar-menu" id="topbar-menu" aria-label="Menu"><i class="bi bi-list"></i></button>
-        <h1 class="team-topbar-name">{{ team.name }}</h1>
-        <div class="team-topbar-right">
-            <span class="team-profile-circle" title="{{ current_user.name }}">{{ current_user.name[0]|upper if current_user.name else '?' }}</span>
-            <a href="{{ url_for('logout') }}" class="team-topbar-logout">Log out</a>
-        </div>
-    </header>
-
     <aside class="team-sidebar" id="team-sidebar">
         <button type="button" class="team-sidebar-toggle" id="sidebar-toggle" aria-label="Toggle menu"><i class="bi bi-list"></i></button>
         <nav class="team-sidebar-nav">
@@ -43,12 +40,20 @@
     </aside>
 
     <main class="team-dash-main">
-        <div class="team-dash-layout">
-            <div class="team-dash-left">
-                <section class="calendar-section" id="calendar-section">
+        <header class="team-topbar">
+            <a href="{{ url_for('dashboard') }}" class="team-topbar-home"><i class="bi bi-house"></i> My Teams</a>
+            <div class="team-topbar-right">
+                <span class="team-profile-circle" title="{{ current_user.name }}">{{ current_user.name[0]|upper if current_user.name else '?' }}</span>
+                <a href="{{ url_for('logout') }}" class="team-topbar-logout">Log out</a>
+            </div>
+        </header>
+
+        <div class="team-dash-content">
+            <div class="team-dash-center">
+                <section class="calendar-section calendar-section-fill" id="calendar-section">
                     <div class="calendar-header">
                         <button type="button" class="calendar-nav" id="calendar-prev" aria-label="Previous month">‹</button>
-                        <h2 class="section-heading calendar-month-title" id="calendar-month-title">{{ cal_month_name }} {{ cal_year }}</h2>
+                        <h2 class="calendar-month-title" id="calendar-month-title">{{ cal_month_name }} {{ cal_year }}</h2>
                         <button type="button" class="calendar-nav" id="calendar-next" aria-label="Next month">›</button>
                     </div>
                     <div class="calendar-view" id="calendar-view">
@@ -58,21 +63,22 @@
                             </div>
                             <div class="calendar-days" id="calendar-days">
                                 {% for i in range(first_weekday) %}
-                                <div class="calendar-day calendar-day-empty"></div>
+                                <div class="calendar-day calendar-day-empty calendar-day-outside"></div>
                                 {% endfor %}
                                 {% for day in range(1, days_in_month + 1) %}
-                                <div class="calendar-day {{ 'calendar-day-today' if day == cal_today else '' }} {{ 'calendar-day-has-activity' if day in assignment_due_days else '' }}" data-year="{{ cal_year }}" data-month="{{ cal_month }}" data-day="{{ day }}">
+                                <div class="calendar-day {{ 'calendar-day-today' if day == cal_today else '' }} {{ 'calendar-day-has-assignment' if day in assignment_due_days else '' }} {{ 'calendar-day-has-announcement' if day in ns.announcement_days else '' }}" data-year="{{ cal_year }}" data-month="{{ cal_month }}" data-day="{{ day }}">
                                     <span class="calendar-day-num">{{ day }}</span>
-                                    {% if day in assignment_due_days %}
-                                    <span class="calendar-dot"></span>
-                                    {% endif %}
+                                    <span class="calendar-dots">
+                                        {% if day in assignment_due_days %}<span class="calendar-dot calendar-dot-assignment" title="Assignments due"></span>{% endif %}
+                                        {% if day in ns.announcement_days %}<span class="calendar-dot calendar-dot-announcement" title="Announcements"></span>{% endif %}
+                                    </span>
                                 </div>
                                 {% endfor %}
                             </div>
                         </div>
                     </div>
                     <div class="calendar-day-view hidden" id="calendar-day-view">
-                        <h2 class="section-heading calendar-day-view-title" id="calendar-day-view-title"></h2>
+                        <h2 class="calendar-day-view-title" id="calendar-day-view-title"></h2>
                         <button type="button" class="btn-secondary back-to-calendar" id="back-to-calendar">← Back to calendar</button>
                         <div class="calendar-day-assignments" id="calendar-day-assignments"></div>
                         <div class="calendar-day-announcements" id="calendar-day-announcements"></div>
@@ -80,96 +86,98 @@
                 </section>
             </div>
 
-            <div class="team-dash-right">
-                <section class="section announcements-section">
-                    <h2 class="section-heading">Announcements</h2>
+            <aside class="team-dash-right-col">
+                <div class="team-right-box team-right-announcements">
+                    <div class="team-right-box-header">
+                        <h2 class="team-right-box-title">Announcements</h2>
+                        {% if is_coach %}
+                        <button type="button" class="team-right-box-plus" id="announce-plus" aria-label="Post announcement"><i class="bi bi-plus-lg"></i></button>
+                        {% endif %}
+                    </div>
                     {% if is_coach %}
-                    <form action="{{ url_for('team_announce', team_id=team.id) }}" method="post" class="announce-form">
-                        <div class="form-group">
-                            <label for="announce_content">Post an announcement</label>
-                            <textarea id="announce_content" name="content" rows="2" placeholder="Write something..."></textarea>
-                        </div>
-                        <button type="submit" class="btn-primary btn-primary-inline">Post</button>
+                    <form action="{{ url_for('team_announce', team_id=team.id) }}" method="post" class="announce-form announce-form-collapsed" id="announce-form">
+                        <textarea id="announce_content" name="content" rows="2" placeholder="Write something..."></textarea>
+                        <button type="submit" class="btn-primary btn-primary-inline btn-small">Post</button>
                     </form>
                     {% endif %}
-                    {% if announcements %}
-                    <div class="announcement-list">
-                        {% for ann in announcements %}
-                        <div class="announcement-card {{ 'announcement-card-auto' if ann.is_auto else '' }}">
-                            <p class="announcement-content">{{ ann.content }}</p>
-                            <p class="announcement-meta">{{ ann.created_at|fmt_datetime }}</p>
-                            {% if is_coach %}
-                            <div class="announcement-actions">
-                                <a href="{{ url_for('edit_announcement', announcement_id=ann.id) }}" class="btn-small btn-secondary">Edit</a>
-                                <form action="{{ url_for('delete_announcement', announcement_id=ann.id) }}" method="post" class="announcement-delete-form" onsubmit="return confirm('Delete this announcement?');">
-                                    <button type="submit" class="btn-small btn-danger-outline">Delete</button>
-                                </form>
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="empty-state empty-state-inline">No announcements yet.</p>
-                    {% endif %}
-                </section>
-
-                <section class="section assignments-section">
-                    <h2 class="section-heading">{% if is_coach %}Assignments{% else %}My Assignments{% endif %}</h2>
-                    {% if is_coach %}
-                    <p class="section-action">
-                        <a href="{{ url_for('create_team_assignment', team_id=team.id) }}" class="btn-primary btn-primary-inline">Add Assignment</a>
-                    </p>
-                    {% endif %}
-                    {% if assignments %}
-                    <div class="assignment-list" id="assignment-list">
-                        {% for a in assignments %}
-                        <div class="assignment-card {{ 'assignment-card-completed' if not is_coach and assignment_status_by_athlete.get(a.id) and assignment_status_by_athlete[a.id].completed else '' }}" data-group-id="{{ a.group_id or '' }}">
-                            <p class="assignment-title">{{ a.title }}</p>
-                            <p class="assignment-badges">
-                                {% if a.athlete_id and a.athlete %}
-                                <span class="assignment-badge assignment-badge-individual">{{ a.athlete.name }}</span>
-                                {% elif a.group_id and a.group %}
-                                <span class="assignment-badge assignment-badge-group">{{ a.group.name }}</span>
-                                {% else %}
-                                <span class="assignment-badge assignment-badge-team">Entire Team</span>
+                    <div class="team-right-box-inner">
+                        {% if announcements %}
+                        <div class="announcement-list">
+                            {% for ann in announcements %}
+                            <div class="announcement-card {{ 'announcement-card-auto' if ann.is_auto else '' }}">
+                                <p class="announcement-content">{{ ann.content }}</p>
+                                <p class="announcement-meta">{{ ann.created_at.strftime('%b %d, %Y') if ann.created_at else '' }}</p>
+                                {% if is_coach %}
+                                <div class="announcement-actions-hover">
+                                    <a href="{{ url_for('edit_announcement', announcement_id=ann.id) }}" class="btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form action="{{ url_for('delete_announcement', announcement_id=ann.id) }}" method="post" class="announcement-delete-form" onsubmit="return confirm('Delete this announcement?');">
+                                        <button type="submit" class="btn-icon btn-icon-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
                                 {% endif %}
-                            </p>
-                            {% if a.description %}<p class="assignment-desc">{{ a.description }}</p>{% endif %}
-                            {% if a.due_date %}<p class="assignment-due">Due {{ a.due_date|fmt_datetime }}</p>{% endif %}
-                            {% if is_coach %}
-                            {% set completion = assignment_completion.get(a.id, (0, 0)) %}
-                            <div class="assignment-progress">
-                                <div class="progress-bar"><div class="progress-fill" style="width: {{ (completion[1] and (completion[0] / completion[1] * 100)) or 0 }}%;"></div></div>
-                                <span class="progress-text">{{ completion[0] }}/{{ completion[1] }} completed</span>
                             </div>
-                            <div class="assignment-actions">
-                                <a href="{{ url_for('edit_assignment', assignment_id=a.id) }}" class="btn-small btn-secondary">Edit</a>
-                                <form action="{{ url_for('delete_assignment', assignment_id=a.id) }}" method="post" class="assignment-delete-form" onsubmit="return confirm('Delete this assignment?');">
-                                    <button type="submit" class="btn-small btn-danger-outline">Delete</button>
-                                </form>
-                            </div>
-                            {% else %}
-                            {% set status = assignment_status_by_athlete.get(a.id) %}
-                            {% if status and status.completed %}
-                            <p class="assignment-status-done"><span class="checkmark">✓</span> Complete</p>
-                            <form action="{{ url_for('assignment_uncomplete', assignment_id=a.id) }}" method="post" style="display: inline;">
-                                <button type="submit" class="btn-danger-outline btn-small">Undo</button>
-                            </form>
-                            {% else %}
-                            <form action="{{ url_for('assignment_complete', assignment_id=a.id) }}" method="post" style="display: inline;">
-                                <button type="submit" class="btn-primary btn-primary-inline btn-small">Mark Complete</button>
-                            </form>
-                            {% endif %}
-                            {% endif %}
+                            {% endfor %}
                         </div>
-                        {% endfor %}
+                        {% else %}
+                        <p class="empty-state empty-state-inline">No announcements yet.</p>
+                        {% endif %}
                     </div>
-                    {% else %}
-                    <p class="empty-state empty-state-inline">No assignments yet.</p>
-                    {% endif %}
-                </section>
-            </div>
+                </div>
+
+                <div class="team-right-box team-right-assignments">
+                    <div class="team-right-box-header">
+                        <h2 class="team-right-box-title">Assignments</h2>
+                        {% if is_coach %}
+                        <a href="{{ url_for('create_team_assignment', team_id=team.id) }}" class="team-right-box-plus" aria-label="Add assignment"><i class="bi bi-plus-lg"></i></a>
+                        {% endif %}
+                    </div>
+                    <div class="team-right-box-inner">
+                        {% if assignments %}
+                        <div class="assignment-list" id="assignment-list">
+                            {% for a in assignments %}
+                            <div class="assignment-card {{ 'assignment-card-completed' if not is_coach and assignment_status_by_athlete.get(a.id) and assignment_status_by_athlete[a.id].completed else '' }}" data-group-id="{{ a.group_id or '' }}">
+                                <p class="assignment-title">{{ a.title }}</p>
+                                <p class="assignment-badges">
+                                    {% if a.athlete_id and a.athlete %}
+                                    <span class="assignment-badge assignment-badge-individual">{{ a.athlete.name }}</span>
+                                    {% elif a.group_id and a.group %}
+                                    <span class="assignment-badge assignment-badge-group">{{ a.group.name }}</span>
+                                    {% else %}
+                                    <span class="assignment-badge assignment-badge-team">Entire Team</span>
+                                    {% endif %}
+                                </p>
+                                {% if a.due_date %}<p class="assignment-due">Due {{ a.due_date|fmt_datetime }}</p>{% endif %}
+                                {% if is_coach %}
+                                {% set completion = assignment_completion.get(a.id, (0, 0)) %}
+                                <p class="assignment-progress-text">{{ completion[0] }}/{{ completion[1] }} completed</p>
+                                <div class="assignment-actions-hover">
+                                    <a href="{{ url_for('edit_assignment', assignment_id=a.id) }}" class="btn-icon" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form action="{{ url_for('delete_assignment', assignment_id=a.id) }}" method="post" class="assignment-delete-form" onsubmit="return confirm('Delete this assignment?');">
+                                        <button type="submit" class="btn-icon btn-icon-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                                {% else %}
+                                {% set status = assignment_status_by_athlete.get(a.id) %}
+                                {% if status and status.completed %}
+                                <p class="assignment-status-done"><span class="checkmark">✓</span> Complete</p>
+                                <form action="{{ url_for('assignment_uncomplete', assignment_id=a.id) }}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn-small btn-danger-outline">Undo</button>
+                                </form>
+                                {% else %}
+                                <form action="{{ url_for('assignment_complete', assignment_id=a.id) }}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn-primary btn-primary-inline btn-small">Mark Complete</button>
+                                </form>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="empty-state empty-state-inline">No assignments yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </aside>
         </div>
     </main>
 </div>
@@ -220,15 +228,17 @@
     });
     var sidebar = document.getElementById('team-sidebar');
     var sidebarToggle = document.getElementById('sidebar-toggle');
-    var topbarMenu = document.getElementById('topbar-menu');
-    function toggleSidebar() {
-        if (sidebar) sidebar.classList.toggle('open');
+    var announcePlus = document.getElementById('announce-plus');
+    var announceForm = document.getElementById('announce-form');
+    if (announcePlus && announceForm) {
+        announcePlus.addEventListener('click', function() {
+            announceForm.classList.toggle('announce-form-collapsed');
+        });
     }
     if (sidebarToggle && sidebar) {
-        sidebarToggle.addEventListener('click', toggleSidebar);
-    }
-    if (topbarMenu && sidebar) {
-        topbarMenu.addEventListener('click', toggleSidebar);
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+        });
     }
 })();
 </script>
