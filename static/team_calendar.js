@@ -123,6 +123,9 @@
         var titleEl = document.getElementById('calendar-day-view-title');
         if (titleEl) titleEl.textContent = dateLabel;
 
+        var monthTitleEl = document.getElementById('calendar-month-title');
+        if (monthTitleEl) monthTitleEl.textContent = dateLabel;
+
         var assignEl = document.getElementById('calendar-day-assignments');
         if (assignEl) {
             if (assignList.length === 0) {
@@ -176,10 +179,72 @@
         return div.innerHTML;
     }
 
+    function goToPrevDay() {
+        var y = state.dayYear;
+        var m = state.dayMonth;
+        var d = state.dayDay - 1;
+        if (d < 1) {
+            m--;
+            if (m < 1) {
+                m = 12;
+                y--;
+            }
+            d = daysInMonth(y, m);
+        }
+        state.dayYear = y;
+        state.dayMonth = m;
+        state.dayDay = d;
+        showDayView(y, m, d);
+    }
+
+    function goToNextDay() {
+        var y = state.dayYear;
+        var m = state.dayMonth;
+        var d = state.dayDay + 1;
+        var maxD = daysInMonth(y, m);
+        if (d > maxD) {
+            d = 1;
+            m++;
+            if (m > 12) {
+                m = 1;
+                y++;
+            }
+        }
+        state.dayYear = y;
+        state.dayMonth = m;
+        state.dayDay = d;
+        showDayView(y, m, d);
+    }
+
     function backToCalendar() {
+        if (state.view === 'day' && state.dayYear != null && state.dayMonth != null) {
+            state.year = state.dayYear;
+            state.month = state.dayMonth;
+        }
         state.view = 'grid';
+        renderGrid();
         document.getElementById('calendar-view').classList.remove('hidden');
         document.getElementById('calendar-day-view').classList.add('hidden');
+    }
+
+    function onPrevClick() {
+        if (state.view === 'day') {
+            goToPrevDay();
+        } else {
+            state.month--;
+            if (state.month < 1) { state.month = 12; state.year--; }
+            renderGrid();
+        }
+    }
+
+    function onNextClick() {
+        if (state.view === 'day') {
+            goToNextDay();
+        } else {
+            state.month++;
+            if (state.month > 12) { state.month = 1; state.year++; }
+            renderGrid();
+        }
     }
 
     function init() {
@@ -187,20 +252,8 @@
 
         var prevBtn = document.getElementById('calendar-prev');
         var nextBtn = document.getElementById('calendar-next');
-        if (prevBtn) {
-            prevBtn.addEventListener('click', function() {
-                state.month--;
-                if (state.month < 1) { state.month = 12; state.year--; }
-                renderGrid();
-            });
-        }
-        if (nextBtn) {
-            nextBtn.addEventListener('click', function() {
-                state.month++;
-                if (state.month > 12) { state.month = 1; state.year++; }
-                renderGrid();
-            });
-        }
+        if (prevBtn) prevBtn.addEventListener('click', onPrevClick);
+        if (nextBtn) nextBtn.addEventListener('click', onNextClick);
 
         var backBtn = document.getElementById('back-to-calendar');
         if (backBtn) backBtn.addEventListener('click', backToCalendar);
