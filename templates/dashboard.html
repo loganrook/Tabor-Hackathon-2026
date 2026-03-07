@@ -1,40 +1,63 @@
-{# dashboard.html — Single "My Teams" view for coaches and athletes. #}
+{# dashboard.html — "My Teams" using the same sidebar + top bar shell as team pages. #}
 {% extends "base.html" %}
 {% block title %}My Teams — CoachHub{% endblock %}
 {% block content %}
-<div class="page-header">
-    <h1>My Teams</h1>
-    {% if is_coach %}
-    <a href="{{ url_for('create_team') }}" class="btn-primary btn-primary-inline"><i class="bi bi-plus-lg"></i> Create Team</a>
-    {% else %}
-    <a href="{{ url_for('join_team') }}" class="btn-primary btn-primary-inline"><i class="bi bi-plus-lg"></i> Join Team</a>
-    {% endif %}
-</div>
+<div class="team-dash-wrapper">
+    {% include '_team_sidebar.html' %}
 
-{% if teams %}
-<div class="team-grid">
-    {% for team in teams %}
-    <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-card-link">
-        <div class="team-card">
-            <p class="team-name">{{ team.name }}</p>
-            {% if is_coach %}
-            <p class="team-meta">{{ team.athletes.count() }} athlete{{ 's' if team.athletes.count() != 1 else '' }}</p>
-            <p class="team-meta">Invite code: <span class="invite-code">{{ team.invite_code }}</span></p>
-            {% else %}
-            <p class="team-meta">Coach: {{ team.coach.name }}</p>
-            {% endif %}
+    <main class="team-dash-main">
+        {% include '_team_topbar.html' %}
+
+        <div class="team-dash-content">
+            <div class="team-dash-center">
+                <div class="page-header">
+                    <h1>My Teams</h1>
+                    {% if is_coach %}
+                    <a href="{{ url_for('create_team') }}" class="btn-primary btn-primary-inline"><i class="bi bi-plus-lg"></i> Create Team</a>
+                    {% else %}
+                    <a href="{{ url_for('join_team') }}" class="btn-primary btn-primary-inline"><i class="bi bi-plus-lg"></i> Join Team</a>
+                    {% endif %}
+                </div>
+
+                {% if teams %}
+                <div class="team-grid">
+                    {% for team in teams %}
+                    <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-card-link">
+                        <div class="team-card">
+                            <p class="team-name">{{ team.name }}</p>
+                            {% if is_coach %}
+                            <p class="team-meta">{{ team.athletes.count() }} athlete{{ 's' if team.athletes.count() != 1 else '' }}</p>
+                            <p class="team-meta">Invite code: <span class="invite-code">{{ team.invite_code }}</span></p>
+                            {% else %}
+                            <p class="team-meta">Coach: {{ team.coach.name }}</p>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state section">
+                    <p>No teams yet.</p>
+                    {% if is_coach %}
+                    <a href="{{ url_for('create_team') }}" class="btn-primary">Create Team</a>
+                    {% else %}
+                    <a href="{{ url_for('join_team') }}" class="btn-primary">Join Team</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
         </div>
-    </a>
-    {% endfor %}
+    </main>
 </div>
-{% else %}
-<div class="empty-state section">
-    <p>No teams yet.</p>
-    {% if is_coach %}
-    <a href="{{ url_for('create_team') }}" class="btn-primary">Create Team</a>
-    {% else %}
-    <a href="{{ url_for('join_team') }}" class="btn-primary">Join Team</a>
-    {% endif %}
-</div>
-{% endif %}
+<script>
+(function() {
+    var sidebar = document.getElementById('team-sidebar');
+    var sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+        });
+    }
+})();
+</script>
 {% endblock %}

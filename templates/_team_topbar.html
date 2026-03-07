@@ -1,6 +1,14 @@
-{# _team_topbar.html — Team top bar: team name left, profile circle + Log out right. #}
+{# _team_topbar.html — Universal top bar: contextual title left, profile circle + Log out right. #}
 <header class="team-topbar">
-    <h1 class="team-topbar-name">{{ team.name }}</h1>
+    <h1 class="team-topbar-name">
+        {% if team is defined %}
+            {{ team.name }}
+        {% elif request.endpoint == 'dashboard' %}
+            My Teams
+        {% else %}
+            CoachHub
+        {% endif %}
+    </h1>
     <div class="team-topbar-right">
         <a href="{{ url_for('profile') }}" class="team-topbar-profile-link" aria-label="Account">
             <span class="team-profile-circle">{{ current_user.name[0]|upper if current_user.name else '?' }}</span>
