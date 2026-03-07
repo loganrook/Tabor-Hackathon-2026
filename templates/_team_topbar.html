@@ -25,14 +25,6 @@
         {% endif %}
     </h1>
     <div class="team-topbar-right">
-        {% if current_user.is_authenticated and current_user.__class__.__name__ == 'Coach' %}
-        <a href="{{ url_for('coach_inbox') }}" class="team-topbar-messages-link" aria-label="Messages">
-            <i class="bi bi-chat-dots"></i>
-            {% if unread_dm_count %}
-            <span class="badge-dot"></span>
-            {% endif %}
-        </a>
-        {% endif %}
         <a href="{{ url_for('profile') }}" class="team-topbar-profile-link" aria-label="Account">
             <span class="team-profile-circle">{{ current_user.name[0]|upper if current_user.name else '?' }}</span>
         </a>
