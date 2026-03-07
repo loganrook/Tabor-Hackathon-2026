@@ -15,7 +15,13 @@
         </div>
         <div class="form-group">
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
+            <input type="password" id="password" name="password" required autocomplete="new-password">
+            <ul class="password-requirements" id="password-requirements" aria-live="polite">
+                <li id="req-length"><span class="req-icon" aria-hidden="true"></span> At least 8 characters</li>
+                <li id="req-upper"><span class="req-icon" aria-hidden="true"></span> At least one uppercase letter</li>
+                <li id="req-lower"><span class="req-icon" aria-hidden="true"></span> At least one lowercase letter</li>
+                <li id="req-number"><span class="req-icon" aria-hidden="true"></span> At least one number</li>
+            </ul>
         </div>
         <div class="form-group">
             <label>I am a…</label>
@@ -30,4 +36,23 @@
     </form>
     <p class="auth-footer">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
 </div>
+<script>
+(function() {
+    var pw = document.getElementById('password');
+    var reqLength = document.getElementById('req-length');
+    var reqUpper = document.getElementById('req-upper');
+    var reqLower = document.getElementById('req-lower');
+    var reqNumber = document.getElementById('req-number');
+    if (!pw || !reqLength) return;
+    function check() {
+        var p = pw.value;
+        reqLength.classList.toggle('req-met', p.length >= 8);
+        reqUpper.classList.toggle('req-met', /[A-Z]/.test(p));
+        reqLower.classList.toggle('req-met', /[a-z]/.test(p));
+        reqNumber.classList.toggle('req-met', /\d/.test(p));
+    }
+    pw.addEventListener('input', check);
+    pw.addEventListener('change', check);
+})();
+</script>
 {% endblock %}

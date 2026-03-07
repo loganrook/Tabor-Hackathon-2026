@@ -235,6 +235,30 @@ body:not(.dashboard-layout) .form-group textarea:focus {
     resize: vertical;
 }
 
+.password-requirements {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    list-style: none;
+}
+
+.password-requirements li {
+    margin-bottom: 0.2rem;
+}
+
+.password-requirements .req-icon {
+    display: inline-block;
+    width: 1em;
+    margin-left: -1.25rem;
+    margin-right: 0.35rem;
+}
+
+.password-requirements li.req-met .req-icon::after {
+    content: "✓";
+    color: var(--success, #059669);
+}
+
 /* ── Buttons ── */
 .btn-primary {
     display: block;

@@ -14,7 +14,10 @@ from extensions import db, login_manager
 
 # Import models after extensions so db is available; registers models with Flask-SQLAlchemy
 import calendar as cal_module
+import time
 from datetime import datetime, date
+
+from validators import validate_password
 from models import (  # noqa: E402, F401
     Coach,
     Athlete,
@@ -24,6 +27,9 @@ from models import (  # noqa: E402, F401
     AssignmentStatus,
     Group,
 )
+
+# In-memory rate limit for failed logins: ip -> (attempt_count, block_until_timestamp)
+_login_failures = {}
 
 
 def create_app(config_class=Config):
@@ -44,6 +50,12 @@ def create_app(config_class=Config):
         h = dt.hour % 12 or 12
         ampm = "AM" if dt.hour < 12 else "PM"
         return dt.strftime("%B %d, %Y at ") + f"{h}:{dt.minute:02d} {ampm}"
+
+    @app.after_request
+    def add_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        return response
 
     @login_manager.user_loader
     def load_user(user_id: str):
@@ -81,8 +93,16 @@ def create_app(config_class=Config):
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
-        """Show login form (GET) or authenticate and redirect (POST)."""
+        """Show login form (GET) or authenticate and redirect (POST). Rate-limited by IP."""
         if request.method == "POST":
+            ip = request.remote_addr or "0.0.0.0"
+            now = time.time()
+            count, block_until = _login_failures.get(ip, (0, 0))
+            if block_until and now < block_until:
+                flash("Too many failed attempts. Try again in a few minutes.", "error")
+                return render_template("login.html")
+            if block_until and now >= block_until:
+                count, block_until = 0, 0
             email = request.form.get("email", "").strip()
             password = request.form.get("password", "")
             if not email or not password:
@@ -91,16 +111,21 @@ def create_app(config_class=Config):
             try:
                 validate_email(email, check_deliverability=False)
             except EmailNotValidError:
-                flash("Please enter a valid email address.", "error")
+                flash("Invalid email or password.", "error")
                 return render_template("login.html")
             coach = Coach.query.filter_by(email=email).first()
             if coach and coach.check_password(password):
+                _login_failures.pop(ip, None)
                 login_user(coach)
                 return redirect(url_for("coach_dashboard"))
             athlete = Athlete.query.filter_by(email=email).first()
             if athlete and athlete.check_password(password):
+                _login_failures.pop(ip, None)
                 login_user(athlete)
                 return redirect(url_for("athlete_dashboard"))
+            count += 1
+            block_until = (now + 300) if count >= 5 else 0
+            _login_failures[ip] = (count, block_until)
             flash("Invalid email or password.", "error")
             return render_template("login.html")
         return render_template("login.html")
@@ -124,6 +149,11 @@ def create_app(config_class=Config):
             role = request.form.get("role", "").strip().lower()
             if not name or not email or not password:
                 flash("Name, email, and password are required.", "error")
+                return render_template("register.html", role_param=request.form.get("role"))
+            pw_errors = validate_password(password)
+            if pw_errors:
+                for msg in pw_errors:
+                    flash(msg, "error")
                 return render_template("register.html", role_param=request.form.get("role"))
             try:
                 validate_email(email, check_deliverability=False)
