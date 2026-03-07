@@ -38,18 +38,29 @@
             </div>
         </aside>
 
-        {# —— Main content area —— #}
+        {# —— Main content area (block content is below, single place) —— #}
         <main class="dashboard-main">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="flash-banner {{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            {% block content %}{% endblock %}
-        </main>
-
+    {% else %}
+    <nav class="nav-minimal">
+        <a class="nav-logo" href="{{ url_for('index') }}">CoachHub</a>
+        <div class="nav-right">
+            <a href="{{ url_for('login') }}">Log in</a>
+            <a href="{{ url_for('choose_role') }}">Sign up</a>
+        </div>
+    </nav>
+    <div class="app-container">
+        <main class="content">
+    {% endif %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-banner {{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+    </main>
+    {% if current_user.is_authenticated %}
         {# —— Right sidebar —— #}
         <aside class="sidebar sidebar-right">
             <div class="card-saas profile-card">
@@ -103,24 +114,6 @@
         </aside>
     </div>
     {% else %}
-    <nav class="nav-minimal">
-        <a class="nav-logo" href="{{ url_for('index') }}">CoachHub</a>
-        <div class="nav-right">
-            <a href="{{ url_for('login') }}">Log in</a>
-            <a href="{{ url_for('choose_role') }}">Sign up</a>
-        </div>
-    </nav>
-    <div class="app-container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-banner {{ 'success' if category == 'success' else 'error' if category == 'error' else 'info' }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        <main class="content">
-            {% block content %}{% endblock %}
-        </main>
     </div>
     {% endif %}
 
