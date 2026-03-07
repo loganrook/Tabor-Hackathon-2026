@@ -139,6 +139,22 @@ body:not(.dashboard-layout) .auth-footer a {
     margin-bottom: 0;
 }
 
+@keyframes flash-fade-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}
+
+.flash-banner.fade-out {
+    animation: flash-fade-out 1s ease forwards;
+    pointer-events: none;
+}
+
 .flash-banner.success {
     background: var(--success-bg);
     color: var(--success-text);

@@ -40,6 +40,26 @@
     {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    (function() {
+        function initFlashFade() {
+            document.querySelectorAll('.flash-banner').forEach(function(banner) {
+                var delay = banner.classList.contains('error') ? 5000 : 3000;
+                setTimeout(function() {
+                    banner.classList.add('fade-out');
+                    setTimeout(function() {
+                        banner.remove();
+                    }, 1000);
+                }, delay);
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initFlashFade);
+        } else {
+            initFlashFade();
+        }
+    })();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
