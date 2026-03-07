@@ -1,0 +1,47 @@
+{# Shared landing mosaic: scrolling rows of sports photos with dark overlay. #}
+{% set landing_images = [
+    'landing-photos/landing-baseball.jpg',
+    'landing-photos/landing-soccer-kick.jpg',
+    'landing-photos/landing-football-catch.jpg',
+    'landing-photos/landing-soccer-back.jpg',
+    'landing-photos/landing-football-qb.jpg',
+    'landing-photos/landing-softball-point.jpg',
+    'landing-photos/landing-fieldhockey.jpg',
+    'landing-photos/landing-rugby.jpg',
+    'landing-photos/landing-football-close.jpg',
+    'landing-photos/landing-polo.jpg',
+    'landing-photos/landing-basketball-girl.jpg',
+    'landing-photos/landing-softball-swing.jpg'
+] %}
+
+{# Each row: 6 unique images in a row-specific order to reduce repetition. #}
+{% set row_orders = [
+    [0, 2, 4, 1, 5, 3],
+    [6, 8, 10, 7, 11, 9],
+    [1, 3, 5, 0, 2, 4],
+    [7, 9, 11, 6, 8, 10],
+    [2, 4, 0, 3, 5, 1],
+    [8, 10, 6, 9, 11, 7]
+] %}
+
+<div class="landing-rows">
+    {% for row in range(0, 6) %}
+    <div class="landing-row-wrapper">
+        <div class="landing-row-track {% if row % 2 == 0 %}landing-row-left{% else %}landing-row-right{% endif %}">
+            {% for idx in row_orders[row] %}
+            <div class="landing-photo">
+                <img src="{{ url_for('static', filename=landing_images[idx]) }}" alt="RepRoom sport background">
+            </div>
+            {% endfor %}
+            {% for idx in row_orders[row] %}
+            <div class="landing-photo">
+                <img src="{{ url_for('static', filename=landing_images[idx]) }}" alt="RepRoom sport background">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="landing-overlay-simple"></div>
+

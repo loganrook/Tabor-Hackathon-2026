@@ -89,8 +89,9 @@ Tests are stubs for now; implement them as you add features (e.g. login, DB oper
 
 ## Landing page experience
 
-- **Animated mosaic**: Unauthenticated visitors land on a full-viewport hero over an animated sport-themed mosaic of tiles in deep blues, oranges, greens, and dark reds. The tile grid slowly scrolls upward in an infinite loop, with subtle patterns and low-opacity sport icons (football, basketball, whistle, dumbbell, stopwatch, jersey) scattered throughout.
-- **Focused hero**: A transparent top bar shows the RepRoom logo and a “Get Started” pill button, while centered hero copy reads “Your Team’s Playbook, Digitized.” with the tagline “Workouts. Schedules. Communication. All in one place.” Primary calls-to-action are **Sign Up** and **Log In**, with a dark overlay and text shadows ensuring readability over the moving background.
+- **Scrolling photo rows**: Unauthenticated visitors land on a full-viewport hero over horizontally scrolling rows of square sports photos (football, soccer, softball, field hockey, rugby, basketball, polo). Each row is a seamless, looping flex track that slowly slides left or right, with no gaps or overlaps, creating a living collage of team moments behind the hero.
+- **Focused hero**: Centered hero copy reads **“RepRoom”** with the tagline “Workouts. Schedules. Communication. All in one place.” Primary calls-to-action are **Sign Up** and **Log In**, with a dark radial overlay and text shadows ensuring readability over the moving background.
+- **Seamless auth transition**: Clicking **Log In** or **Sign Up** keeps the same animated mosaic background and overlay; the login and registration cards slide in centered over the existing photo rows so the transition from the landing hero to auth feels continuous rather than jumping to a different layout.
 
 ## Workouts: sets and reps
 

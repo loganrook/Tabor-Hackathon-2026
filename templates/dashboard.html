@@ -17,7 +17,7 @@
                 <div class="team-grid my-teams-grid">
                     {% for team in teams %}
                     <a href="{{ url_for('team_dashboard', team_id=team.id) }}" class="team-card-link">
-                        <div class="team-card team-card-dashboard" style="animation-delay: {{ loop.index0 * 70 }}ms;">
+                        <div class="team-card team-card-dashboard" style="animation-delay: {{ loop.index0 * 100 }}ms;">
                             <div class="team-card-accent"></div>
                             <div class="team-card-inner">
                                 <p class="team-name team-name-large">{{ team.name }}</p>
@@ -25,23 +25,13 @@
                                     <i class="bi bi-people-fill"></i>
                                     {{ team.athletes.count() }} athlete{{ 's' if team.athletes.count() != 1 else '' }}
                                 </p>
-                                {% if is_coach %}
-                                <button type="button"
-                                        class="team-card-copy"
-                                        data-invite="{{ team.invite_code }}"
-                                        aria-label="Copy invite code">
-                                    <i class="bi bi-link-45deg"></i>
-                                    <span>Share</span>
-                                    <span class="team-card-copy-tooltip">Code copied!</span>
-                                </button>
-                                {% endif %}
                             </div>
                         </div>
                     </a>
                     {% endfor %}
 
                     {# Create/Join team CTA card #}
-                    {% set cta_delay = (teams|length * 70) %}
+                    {% set cta_delay = (teams|length * 100) %}
                     <a href="{{ url_for('create_team') if is_coach else url_for('join_team') }}" class="team-card-link">
                         <div class="team-card team-card-dashboard team-card-cta" style="animation-delay: {{ cta_delay }}ms;">
                             <div class="team-card-cta-inner">
@@ -58,14 +48,8 @@
                 {% else %}
                 <div class="dashboard-empty">
                     <div class="dashboard-empty-illustration">🏆</div>
-                    <h2 class="dashboard-empty-title">No teams yet — let's change that!</h2>
-                    <p class="dashboard-empty-subtitle">
-                        {% if is_coach %}
-                        Get started by creating your first team.
-                        {% else %}
-                        Get started by joining your first team.
-                        {% endif %}
-                    </p>
+                    <h2 class="dashboard-empty-title">No teams yet</h2>
+                    <p class="dashboard-empty-subtitle">Create your first team to get started.</p>
                     <div class="team-grid my-teams-grid dashboard-empty-grid">
                         <a href="{{ url_for('create_team') if is_coach else url_for('join_team') }}" class="team-card-link">
                             <div class="team-card team-card-dashboard team-card-cta team-card-cta-large">
@@ -88,39 +72,11 @@
     <div class="dashboard-home-rail dashboard-home-rail-right"></div>
 </div>
 
-<script>
-(function() {
-    // Copy invite code without triggering navigation
-    document.querySelectorAll('.team-card-copy').forEach(function(btn) {
-        btn.addEventListener('click', function(ev) {
-            ev.stopPropagation();
-            ev.preventDefault();
-            var code = btn.getAttribute('data-invite');
-            if (!code) return;
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(code).then(function() {
-                    var tooltip = btn.querySelector('.team-card-copy-tooltip');
-                    if (tooltip) {
-                        tooltip.classList.add('visible');
-                        setTimeout(function() {
-                            tooltip.classList.remove('visible');
-                        }, 1600);
-                    }
-                }).catch(function() {});
-            }
-        });
-    });
-})();
-</script>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script>
-(function () {
-    document.addEventListener('DOMContentLoaded', function () {
-        document.body.classList.add('dashboard-home');
-    });
-})();
+document.body.classList.add('dashboard-home');
 </script>
 {% endblock %}

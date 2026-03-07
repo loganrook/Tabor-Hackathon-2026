@@ -185,6 +185,43 @@ body.auth-dark {
     min-height: 100vh;
 }
 
+/* Landing-style auth pages (login / register on mosaic) */
+body.landing-auth {
+    background: #020617;
+    color: #fff;
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+}
+
+body.landing-auth .app-container {
+    max-width: 100%;
+    padding: 0;
+}
+
+/* Top bar over mosaic on auth pages */
+body.landing-auth .nav-minimal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem 1.5rem;
+    border-bottom: none;
+    background: transparent;
+    z-index: 3;
+    animation: auth-nav-in 0.35s ease-out forwards;
+}
+
+body.landing-auth .nav-minimal .nav-logo,
+body.landing-auth .nav-minimal .nav-right a {
+    color: #f9fafb;
+}
+
+body.landing-auth .nav-minimal .nav-right a:hover,
+body.landing-auth .nav-minimal .nav-logo:hover {
+    color: #e5e7eb;
+}
+
 body:not(.dashboard-layout) .nav-minimal .nav-logo:hover,
 body:not(.dashboard-layout) .nav-minimal .nav-right a:hover {
     color: var(--accent);
@@ -276,6 +313,8 @@ body:not(.dashboard-layout) .auth-footer a {
     font-size: 0.9375rem;
     margin-bottom: 0;
     animation: flash-slide-in 0.25s ease-out;
+    position: relative;
+    z-index: 3;
 }
 
 @keyframes flash-slide-in {
@@ -3178,10 +3217,6 @@ body.home-landing .app-container {
 .landing-hero-inner {
     text-align: center;
     max-width: 640px;
-    opacity: 0;
-    transform: translateY(10px);
-    animation: landing-hero-fade 0.6s ease-out forwards;
-    animation-delay: 0.1s;
 }
 
 @keyframes landing-hero-fade {
@@ -3193,6 +3228,14 @@ body.home-landing .app-container {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Auth pages: reuse slide-in feel but a bit quicker */
+body.landing-auth .landing-hero-inner {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: auth-card-in 0.4s ease-out forwards;
+    animation-delay: 0.05s;
 }
 
 .landing-title {
@@ -3285,29 +3328,39 @@ body.home-landing .app-container {
 
 /* ── Dashboard home (My Teams) ── */
 body.dashboard-home {
-    background: #111827;
-    color: var(--text);
+    background: linear-gradient(180deg, #111827 0%, #0d1117 100%);
+    color: #e5e7eb;
 }
 
 body.dashboard-home .app-container {
-    max-width: 960px;
-    padding: 2.5rem 2rem 3rem;
+    max-width: 1040px;
+    padding: 2.5rem 2.25rem 3.25rem;
 }
 
 body.dashboard-home .page-header-dashboard {
-    margin-bottom: 1.75rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+body.dashboard-home .page-header-dashboard::after {
+    content: "";
+    display: block;
+    height: 1px;
+    margin-top: 0.75rem;
+    background: linear-gradient(90deg, transparent 0%, rgba(55, 65, 81, 0.75) 15%, rgba(55, 65, 81, 0.75) 85%, transparent 100%);
 }
 
 body.dashboard-home .page-title-large {
-    color: #111827;
-    font-size: 1.75rem;
-    font-weight: 700;
+    color: #f9fafb;
+    font-size: 2rem;
+    font-weight: 800;
 }
 
 /* Top bar on dashboard home */
 body.dashboard-home .team-topbar {
     background: #ffffff;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     border-bottom: 1px solid rgba(0, 0, 0, 0.03);
 }
 
@@ -3327,22 +3380,22 @@ body.dashboard-home .team-topbar-logout:hover {
     color: var(--text);
 }
 
-/* Frame: navy side rails + light center */
+/* Frame: full-width dark gradient under top bar */
 .dashboard-home-frame {
     display: flex;
     min-height: calc(100vh - 50px);
-    background: #111827;
+    background: linear-gradient(180deg, #111827 0%, #0d1117 100%);
 }
 
 .dashboard-home-rail {
-    width: 220px;
-    background: #1a1a2e;
+    width: 0;
+    background: transparent;
     flex-shrink: 0;
 }
 
 .dashboard-home-main {
     flex: 1;
-    background: #f5f5f7;
+    background: linear-gradient(180deg, #111827 0%, #0d1117 100%);
     display: flex;
     flex-direction: column;
 }
@@ -3353,99 +3406,119 @@ body.dashboard-home .team-topbar-logout:hover {
     }
 
     .dashboard-home-main {
-        background: #f5f5f7;
+        background: linear-gradient(180deg, #111827 0%, #0d1117 100%);
     }
 }
 
 /* Team cards grid on dashboard home */
 body.dashboard-home .team-grid {
-    margin-top: 1.75rem;
+    margin-top: 2.75rem;
     justify-items: center;
 }
 
 body.dashboard-home .my-teams-grid {
-    max-width: 840px;
+    max-width: 1040px;
     margin: 0 auto;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
 }
 
 body.dashboard-home .team-card {
-    background: var(--surface);
-    border-radius: 12px;
-    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
-    border: 1px solid #e5e7eb;
-    max-width: 250px;
+    background: #1f2937;
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.5);
+    border: none;
+    width: 320px;
+    min-width: 320px;
+    max-width: 320px;
+    height: 180px;
+    min-height: 180px;
     margin: 0 auto;
 }
 
 body.dashboard-home .team-card-dashboard {
-    min-height: 150px;
+    min-height: 180px;
+    height: 180px;
+}
+
+body.dashboard-home .team-card-inner {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    height: 100%;
 }
 
 body.dashboard-home .team-card-accent {
-    background: linear-gradient(90deg, #4A90D9, #6BB4FF);
+    background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 35%, #60a5fa 100%);
 }
 
 body.dashboard-home .team-card .team-name,
 body.dashboard-home .team-name-large {
-    color: var(--text);
+    color: #f9fafb;
+    font-size: 1.5rem;
+    font-weight: 700;
 }
 
 body.dashboard-home .team-card .team-meta,
 body.dashboard-home .team-meta-inline,
 body.dashboard-home .team-meta-inline i {
-    color: var(--text-muted);
+    color: #9ca3af;
 }
 
 body.dashboard-home .team-card:hover {
-    border-color: #cbd5f5;
-    box-shadow: var(--shadow-card);
-    transform: translateY(-3px);
-}
-
-/* Share button */
-body.dashboard-home .team-card-copy {
-    border-radius: 999px;
-    border-color: #e5e7eb;
-    background: #ffffff;
-    color: #4A90D9;
-}
-
-body.dashboard-home .team-card-copy:hover {
-    border-color: #4A90D9;
-    background: rgba(74, 144, 217, 0.06);
+    border: 1px solid rgba(96, 165, 250, 0.4);
+    box-shadow: 0 22px 48px rgba(37, 99, 235, 0.4);
+    transform: translateY(-6px);
 }
 
 /* CTA cards (Create / Join Team) */
 body.dashboard-home .team-card-cta {
-    background: #f9fafb;
-    border-style: dashed;
-    border-width: 2px;
-    border-color: rgba(148, 163, 184, 0.8);
+    background: #1f2937;
+    border: 1px dashed rgba(75, 85, 99, 0.8);
+    width: 320px;
+    min-width: 320px;
+    max-width: 320px;
+    height: 180px;
+    min-height: 180px;
 }
 
 body.dashboard-home .team-card-cta-inner {
-    color: var(--text-muted);
+    color: #9ca3af;
 }
 
 body.dashboard-home .team-card-cta-icon {
-    border-color: rgba(148, 163, 184, 0.8);
-    color: #4A90D9;
-    background: #ffffff;
+    border-color: rgba(75, 85, 99, 0.8);
+    color: #9ca3af;
+    background: transparent;
+    width: 52px;
+    height: 52px;
+    font-size: 1.5rem;
 }
 
 body.dashboard-home .team-card-cta-text {
-    color: var(--text);
+    color: #9ca3af;
+    font-size: 1.1rem;
 }
 
 body.dashboard-home .team-card-cta:hover {
-    border-color: #4A90D9;
+    border: 1px solid #3b82f6;
+    background: rgba(37, 99, 235, 0.12);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.6);
+    transform: translateY(-6px);
 }
 
 body.dashboard-home .team-card-cta:hover .team-card-cta-icon,
 body.dashboard-home .team-card-cta:hover .team-card-cta-text {
-    color: #4A90D9;
+    color: #60a5fa;
+}
+
+body.dashboard-home .team-card-cta-large {
+    width: 320px;
+    min-width: 320px;
+    max-width: 320px;
+    height: 180px;
+    min-height: 180px;
 }
 
 /* Empty state, dark */

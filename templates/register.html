@@ -2,68 +2,53 @@
 {% extends "base.html" %}
 {% block title %}Create account — RepRoom{% endblock %}
 {% block content %}
-<div class="auth-card">
-    <h1>Create account</h1>
-    <form action="{{ url_for('register') }}" method="post">
-        <div class="form-group">
-            <label for="name">Name</label>
-            <input type="text" id="name" name="name" required>
-        </div>
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required>
-        </div>
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required autocomplete="new-password">
-            <ul class="password-requirements" id="password-requirements" aria-live="polite">
-                <li id="req-length"><span class="req-icon" aria-hidden="true"></span> At least 8 characters</li>
-                <li id="req-upper"><span class="req-icon" aria-hidden="true"></span> At least one uppercase letter</li>
-                <li id="req-lower"><span class="req-icon" aria-hidden="true"></span> At least one lowercase letter</li>
-                <li id="req-number"><span class="req-icon" aria-hidden="true"></span> At least one number</li>
-            </ul>
-        </div>
-        <div class="form-group">
-            <label>I am a…</label>
-            <div class="role-toggle">
-                <input type="radio" name="role" id="role-coach" value="coach" {{ 'checked' if (role_param|default('coach')) == 'coach' else '' }}>
-                <label for="role-coach">Coach</label>
-                <input type="radio" name="role" id="role-athlete" value="athlete" {{ 'checked' if role_param == 'athlete' else '' }}>
-                <label for="role-athlete">Athlete</label>
+<div class="landing-root">
+    {% include "_landing_mosaic.html" %}
+
+    <main class="landing-hero landing-hero-fixed">
+        <div class="landing-hero-inner">
+            <div class="auth-card">
+                <h1>Create account</h1>
+                <form action="{{ url_for('register') }}" method="post">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required autocomplete="new-password">
+                        <ul class="password-requirements" id="password-requirements" aria-live="polite">
+                            <li id="req-length"><span class="req-icon" aria-hidden="true"></span> At least 8 characters</li>
+                            <li id="req-upper"><span class="req-icon" aria-hidden="true"></span> At least one uppercase letter</li>
+                            <li id="req-lower"><span class="req-icon" aria-hidden="true"></span> At least one lowercase letter</li>
+                            <li id="req-number"><span class="req-icon" aria-hidden="true"></span> At least one number</li>
+                        </ul>
+                    </div>
+                    <div class="form-group">
+                        <label>I am a…</label>
+                        <div class="role-toggle">
+                            <input type="radio" name="role" id="role-coach" value="coach" {{ 'checked' if (role_param|default('coach')) == 'coach' else '' }}>
+                            <label for="role-coach">Coach</label>
+                            <input type="radio" name="role" id="role-athlete" value="athlete" {{ 'checked' if role_param == 'athlete' else '' }}>
+                            <label for="role-athlete">Athlete</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Create account</button>
+                </form>
+                <p class="auth-footer">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
             </div>
         </div>
-        <button type="submit" class="btn-primary">Create account</button>
-    </form>
-    <p class="auth-footer">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+    </main>
 </div>
-<script>
-(function() {
-    var pw = document.getElementById('password');
-    var reqLength = document.getElementById('req-length');
-    var reqUpper = document.getElementById('req-upper');
-    var reqLower = document.getElementById('req-lower');
-    var reqNumber = document.getElementById('req-number');
-    if (!pw || !reqLength) return;
-    function check() {
-        var p = pw.value;
-        reqLength.classList.toggle('req-met', p.length >= 8);
-        reqUpper.classList.toggle('req-met', /[A-Z]/.test(p));
-        reqLower.classList.toggle('req-met', /[a-z]/.test(p));
-        reqNumber.classList.toggle('req-met', /\d/.test(p));
-    }
-    pw.addEventListener('input', check);
-    pw.addEventListener('change', check);
-})();
-</script>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script>
-(function () {
-    document.addEventListener('DOMContentLoaded', function () {
-        document.body.classList.add('auth-dark');
-    });
-})();
+document.body.classList.add('landing-auth');
 </script>
 {% endblock %}
