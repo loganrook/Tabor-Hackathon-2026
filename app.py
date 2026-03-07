@@ -196,6 +196,23 @@ def create_app(config_class=Config):
             is_coach=is_coach,
         )
 
+    @app.route("/profile", methods=["GET", "POST"])
+    @login_required
+    def profile():
+        """Profile/settings for the current user (coach or athlete)."""
+        user = current_user
+        role = "Coach" if isinstance(user, Coach) else "Athlete"
+        if request.method == "POST":
+            name = request.form.get("name", "").strip()
+            if not name:
+                flash("Name is required.", "error")
+            else:
+                user.name = name
+                db.session.commit()
+                flash("Profile updated.", "success")
+                return redirect(url_for("profile"))
+        return render_template("profile.html", user=user, role=role)
+
     @app.route("/team/create", methods=["GET", "POST"])
     @login_required
     def create_team():

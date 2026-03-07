@@ -1,0 +1,43 @@
+{# profile.html — Profile/settings for the logged-in user. #}
+{% extends "base.html" %}
+{% block title %}Profile — CoachHub{% endblock %}
+{% block content %}
+<div class="auth-card">
+    <div class="profile-card">
+        <div class="profile-card-avatar">
+            <span>{{ user.name[0]|upper if user.name else '?' }}</span>
+        </div>
+        <div class="profile-card-info">
+            <div class="profile-card-name">{{ user.name or 'Unnamed user' }}</div>
+            <div class="profile-card-role">
+                {{ role }} · {{ user.email }}
+            </div>
+        </div>
+    </div>
+
+    <form action="{{ url_for('profile') }}" method="post" style="margin-top: 1.5rem;">
+        <div class="form-group">
+            <label for="name">Display name</label>
+            <input type="text" id="name" name="name" value="{{ user.name }}" required>
+        </div>
+        <button type="submit" class="btn-primary">Save changes</button>
+    </form>
+
+    <p class="auth-footer" style="margin-top: 1.5rem;">
+        <a href="{{ url_for('dashboard') }}" id="profile-back-link">← Back</a>
+    </p>
+</div>
+<script>
+(function() {
+    var backLink = document.getElementById('profile-back-link');
+    if (backLink) {
+        backLink.addEventListener('click', function(e) {
+            if (window.history.length > 1) {
+                e.preventDefault();
+                window.history.back();
+            }
+        });
+    }
+})();
+</script>
+{% endblock %}
