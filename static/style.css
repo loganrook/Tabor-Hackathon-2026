@@ -3045,9 +3045,21 @@ html {
 }
 
 body.home-landing {
-    background: #111827;
+    --sport-blue: #0b1530;
+    --sport-blue-deep: #050816;
+    --sport-orange: #9a4a1a;
+    --sport-green: #14532d;
+    --sport-red: #7f1d1d;
+    --sport-navy: #020617;
+    --sport-teal: #0f3b3b;
+    --sport-charcoal: #111827;
+    --sport-burgundy: #4a1020;
+
+    background: #020617;
     color: #fff;
     position: relative;
+    height: 100vh;
+    overflow: hidden;
 }
 
 body.home-landing .nav-minimal {
@@ -3059,48 +3071,146 @@ body.home-landing .app-container {
     padding: 0;
 }
 
-.landing-page {
-    min-height: 100vh;
+/* Landing page: scrolling rows of photos behind hero */
+.landing-root {
+    position: relative;
+}
+
+.landing-rows {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: 0;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
-    padding: 4rem 1.5rem;
+    gap: 12px;
+    padding: 24px 32px;
     box-sizing: border-box;
 }
 
+.landing-row-wrapper {
+    overflow: hidden;
+}
+
+.landing-row-track {
+    display: flex;
+    gap: 12px;
+}
+
+.landing-photo {
+    width: 200px;
+    height: 200px;
+    min-width: 200px;
+    min-height: 200px;
+    max-width: 200px;
+    max-height: 200px;
+    overflow: hidden;
+    border-radius: 0;
+    flex-shrink: 0;
+    background: #020617;
+}
+
+.landing-photo img {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+}
+
+.landing-row-left {
+    animation: landing-row-left 30s linear infinite;
+}
+
+.landing-row-right {
+    animation: landing-row-right 30s linear infinite;
+}
+
+@keyframes landing-row-left {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes landing-row-right {
+    0% {
+        transform: translateX(-50%);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+/* Dark overlay above rows */
+.landing-overlay-simple {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.5) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Centered hero content */
 .landing-hero {
-    flex: 1;
+    position: relative;
+    z-index: 2;
+}
+
+.landing-hero-fixed {
+    position: fixed;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
 }
 
 .landing-hero-inner {
     text-align: center;
-    animation: landing-hero-fade 0.5s ease-out forwards;
+    max-width: 640px;
     opacity: 0;
+    transform: translateY(10px);
+    animation: landing-hero-fade 0.6s ease-out forwards;
+    animation-delay: 0.1s;
 }
 
 @keyframes landing-hero-fade {
-    to {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    100% {
         opacity: 1;
+        transform: translateY(0);
     }
 }
 
 .landing-title {
-    font-size: clamp(2.75rem, 8vw, 4.5rem);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    margin: 0 0 1rem;
-    color: #fff;
+    font-size: clamp(2.6rem, 6vw, 4rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    margin: 0 0 1.25rem;
+    color: #f9fafb;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
 }
 
 .landing-tagline {
-    font-size: clamp(1rem, 2vw, 1.125rem);
-    color: #9CA3AF;
-    max-width: 28rem;
+    font-size: clamp(1rem, 1.6vw, 1.2rem);
+    color: #e5e7eb;
+    max-width: 30rem;
     margin: 0 auto 2.5rem;
-    line-height: 1.5;
+    line-height: 1.7;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
 }
 
 .landing-actions {
@@ -3114,39 +3224,54 @@ body.home-landing .app-container {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem 1.75rem;
-    border-radius: 8px;
-    font-size: 0.9375rem;
-    font-weight: 500;
+    padding: 0.85rem 1.9rem;
+    border-radius: 999px;
+    font-size: 0.98rem;
+    font-weight: 600;
     border: 1px solid transparent;
     text-decoration: none;
     cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        opacity 0.2s ease,
+        transform 0.1s ease,
+        box-shadow 0.2s ease;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
 }
 
 .btn-landing-secondary {
     background: transparent;
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.5);
+    color: #f9fafb;
+    border-color: rgba(249, 250, 251, 0.6);
 }
 
 .btn-landing-secondary:hover {
-    background: #fff;
-    color: #111827;
-    border-color: #fff;
+    background: #f9fafb;
+    color: #020617;
+    border-color: #f9fafb;
+    transform: translateY(-1px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.8);
 }
 
 .btn-landing-primary {
-    background: #fff;
-    color: #111827;
-    border-color: #fff;
+    background: #f9fafb;
+    color: #020617;
+    border-color: #f9fafb;
 }
 
 .btn-landing-primary:hover {
-    opacity: 0.9;
+    opacity: 0.94;
+    transform: translateY(-1px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.85);
 }
 
 @media (max-width: 640px) {
+    .landing-topbar {
+        padding: 1rem 1.25rem;
+    }
+
     .landing-actions {
         flex-direction: column;
         width: 100%;

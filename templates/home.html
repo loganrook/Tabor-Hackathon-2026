@@ -3,17 +3,65 @@
 {% block title %}RepRoom{% endblock %}
 
 {% block content %}
-<div class="landing-page">
-    <div class="landing-hero">
+{% set landing_images = [
+    'landing-photos/landing-baseball.jpg',
+    'landing-photos/landing-soccer-kick.jpg',
+    'landing-photos/landing-football-catch.jpg',
+    'landing-photos/landing-soccer-back.jpg',
+    'landing-photos/landing-football-qb.jpg',
+    'landing-photos/landing-softball-point.jpg',
+    'landing-photos/landing-fieldhockey.jpg',
+    'landing-photos/landing-rugby.jpg',
+    'landing-photos/landing-football-close.jpg',
+    'landing-photos/landing-polo.jpg',
+    'landing-photos/landing-basketball-girl.jpg',
+    'landing-photos/landing-softball-swing.jpg'
+] %}
+{# Each row: 6 unique images in row-specific order. row_orders[row] = list of 6 indices (different set per row when possible). #}
+{% set row_orders = [
+    [0, 2, 4, 1, 5, 3],
+    [6, 8, 10, 7, 11, 9],
+    [1, 3, 5, 0, 2, 4],
+    [7, 9, 11, 6, 8, 10],
+    [2, 4, 0, 3, 5, 1],
+    [8, 10, 6, 9, 11, 7]
+] %}
+
+<div class="landing-root">
+    <!-- Horizontal scrolling rows: 6 unique images per row, duplicated for seamless loop -->
+    <div class="landing-rows">
+        {% for row in range(0, 6) %}
+        <div class="landing-row-wrapper">
+            <div class="landing-row-track {% if row % 2 == 0 %}landing-row-left{% else %}landing-row-right{% endif %}">
+                {% for idx in row_orders[row] %}
+                <div class="landing-photo">
+                    <img src="{{ url_for('static', filename=landing_images[idx]) }}" alt="RepRoom sport background">
+                </div>
+                {% endfor %}
+                {% for idx in row_orders[row] %}
+                <div class="landing-photo">
+                    <img src="{{ url_for('static', filename=landing_images[idx]) }}" alt="RepRoom sport background">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Dark overlay on top of rows -->
+    <div class="landing-overlay-simple"></div>
+
+    <!-- Fixed, centered hero content -->
+    <main class="landing-hero landing-hero-fixed">
         <div class="landing-hero-inner">
             <h1 class="landing-title">RepRoom</h1>
-            <p class="landing-tagline">The modern playbook for coaches and athletes.</p>
+            <p class="landing-tagline">Workouts. Schedules. Communication. All in one place.</p>
             <div class="landing-actions">
                 <a href="{{ url_for('login') }}" class="btn-landing btn-landing-secondary">Log In</a>
                 <a href="{{ url_for('register') }}" class="btn-landing btn-landing-primary">Sign Up</a>
             </div>
         </div>
-    </div>
+    </main>
 </div>
 {% endblock %}
 

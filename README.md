@@ -87,6 +87,11 @@ Tests are stubs for now; implement them as you add features (e.g. login, DB oper
 - **Top bar**: When viewing a team, the top bar shows a breadcrumb-style context like `RepRoom › Football`, with the team name slightly larger and bolder for orientation.
 - **Right column**: The right column is split into Announcements and Workouts. Cards in this column use the same clean white card style as the rest of the app so workouts, announcements, and their progress states all feel consistent. Announcement timestamps use friendly “time ago” text like `Just now` or `2 hours ago`, the plus icons have hover tooltips, and empty states include subtle icons so they feel intentional rather than broken. Coaches see per-workout completion progress; athletes see their own exercise completion status.
 
+## Landing page experience
+
+- **Animated mosaic**: Unauthenticated visitors land on a full-viewport hero over an animated sport-themed mosaic of tiles in deep blues, oranges, greens, and dark reds. The tile grid slowly scrolls upward in an infinite loop, with subtle patterns and low-opacity sport icons (football, basketball, whistle, dumbbell, stopwatch, jersey) scattered throughout.
+- **Focused hero**: A transparent top bar shows the RepRoom logo and a “Get Started” pill button, while centered hero copy reads “Your Team’s Playbook, Digitized.” with the tagline “Workouts. Schedules. Communication. All in one place.” Primary calls-to-action are **Sign Up** and **Log In**, with a dark overlay and text shadows ensuring readability over the moving background.
+
 ## Workouts: sets and reps
 
 - **Simple case**: Each exercise row lets you enter a number of sets and a single reps value (for example, `3` sets and `10` reps).
