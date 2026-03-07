@@ -16,7 +16,10 @@
 
         <div class="team-dash-content">
             <div class="team-dash-center">
-                <section class="calendar-section calendar-section-fill" id="calendar-section">
+                <section
+                    class="calendar-section calendar-section-fill"
+                    id="calendar-section"
+                    data-calendar='{{ calendar_payload | tojson | forceescape }}'>
                     <div class="calendar-header">
                         <button type="button" class="calendar-nav" id="calendar-prev" aria-label="Previous month">‹</button>
                         <h2 class="calendar-month-title" id="calendar-month-title">{{ cal_month_name }} {{ cal_year }}</h2>

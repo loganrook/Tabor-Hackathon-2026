@@ -44,6 +44,26 @@ GamePlan is a coach–athlete management web app built with Flask. Coaches creat
 
    The app will be available at `http://127.0.0.1:5000/`. The SQLite database file is created as `app.db` in the project root on first run.
 
+## Demo data
+
+On first launch against an empty database, GamePlan automatically seeds a small demo environment so the UI looks “alive” without any manual setup:
+
+- **Coach accounts**
+  - `coach@example.com` / `Password123!` (head coach)
+  - `assistant@example.com` / `Password123!` (staff coach on the same team)
+- **Athlete accounts**
+  - `jason@example.com` / `Password123!`
+  - `tim@example.com` / `Password123!`
+  - `matt@example.com` / `Password123!`
+- **Team**
+  - One team named `West Dillon Lions` with a generated invite code
+- **Extras**
+  - Position groups (e.g. Quarterbacks, Offense) with athletes assigned
+  - Announcements (manual + auto-generated)
+  - Team-wide and group-only workouts with exercises and completion statuses so dashboards, progress bars, and the calendar all show realistic data
+
+Seeding is **idempotent**: the demo data is only created when the database has no coaches or teams. If you already have data (for example, in a shared dev DB), `seed_demo` will not modify or reset it.
+
 ## Tests
 
 From the project root:

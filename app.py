@@ -19,6 +19,7 @@ import json
 from datetime import datetime, date
 
 from validators import validate_password
+from seed_demo import ensure_demo_data
 from models import (  # noqa: E402, F401
     Coach,
     Athlete,
@@ -1518,6 +1519,8 @@ def create_app(config_class=Config):
 
     with app.app_context():
         db.create_all()
+        # Automatically create a small demo dataset on first run (no-op if data exists).
+        ensure_demo_data()
 
     return app
 
