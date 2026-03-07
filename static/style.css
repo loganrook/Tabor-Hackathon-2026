@@ -760,6 +760,12 @@ body:has(.team-dash-wrapper) {
     color: #fff;
 }
 
+.team-sidebar-home.active {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    font-weight: 600;
+}
+
 .team-sidebar-home i {
     font-size: 1.25rem;
 }
