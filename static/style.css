@@ -337,6 +337,7 @@ body:not(.dashboard-layout) .form-group textarea:focus {
     text-decoration: none;
     color: inherit;
     cursor: pointer;
+    cursor: pointer;
 }
 
 .team-card {
@@ -1050,15 +1051,19 @@ body.dashboard-layout {
 }
 
 .dashboard-app {
-    display: grid;
-    grid-template-columns: var(--sidebar-left-w) 1fr var(--sidebar-right-w);
+    display: block;
     min-height: 100vh;
+    position: relative;
 }
 
 .dashboard-main {
     min-width: 0;
+    margin-left: var(--sidebar-left-w);
+    margin-right: var(--sidebar-right-w);
     padding: calc(var(--space-unit) * 3);
     overflow-x: hidden;
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
 /* —— Left sidebar —— */
@@ -1551,6 +1556,7 @@ body.dashboard-layout {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    cursor: pointer;
 }
 
 .welcome-banner .quick-action:hover {
@@ -1756,10 +1762,6 @@ body.dashboard-layout {
 
 /* —— Dashboard responsive —— */
 @media (max-width: 1200px) {
-    .dashboard-app {
-        grid-template-columns: var(--sidebar-left-w) 1fr;
-    }
-
     .sidebar-right {
         display: none;
     }
@@ -1776,8 +1778,9 @@ body.dashboard-layout {
 }
 
 @media (max-width: 768px) {
-    .dashboard-app {
-        grid-template-columns: 1fr;
+    .dashboard-main {
+        margin-left: 0;
+        margin-right: 0;
     }
 
     .sidebar-left {

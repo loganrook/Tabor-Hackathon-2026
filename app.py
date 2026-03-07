@@ -192,6 +192,74 @@ def create_app(config_class=Config):
         logout_user()
         return redirect(url_for("index"))
 
+    @app.route("/coach/dashboard")
+    @login_required
+    def coach_dashboard():
+        """Coach dashboard: list of teams as cards/links. Redirect to team if only one."""
+        if not isinstance(current_user, Coach):
+            return redirect(url_for("athlete_dashboard"))
+        teams = current_user.teams.all()
+        if len(teams) == 1:
+            return redirect(url_for("team_dashboard", team_id=teams[0].id))
+        return render_template("coach_dashboard.html", teams=teams)
+
+    @app.route("/athlete/dashboard")
+    @login_required
+    def athlete_dashboard():
+        """Athlete dashboard: list of teams as cards/links. Redirect to team if only one."""
+        if not isinstance(current_user, Athlete):
+            return redirect(url_for("coach_dashboard"))
+        teams = current_user.teams.all()
+        if len(teams) == 1:
+            return redirect(url_for("team_dashboard", team_id=teams[0].id))
+        return render_template("athlete_dashboard.html", teams=teams)
+
+    @app.route("/team/create", methods=["GET", "POST"])
+    @login_required
+    def create_team():
+        """Show form to create team (GET) or create team and persist (POST)."""
+        if not isinstance(current_user, Coach):
+            return redirect(url_for("athlete_dashboard"))
+        if request.method == "POST":
+            name = request.form.get("name", "").strip()
+            if not name:
+                flash("Team name is required.", "error")
+                return render_template("team_create.html")
+            team = Team(
+                name=name,
+                coach_id=current_user.id,
+                invite_code=Team.generate_invite_code(),
+            )
+            db.session.add(team)
+            db.session.commit()
+            flash("Team created successfully.", "success")
+            return redirect(url_for("coach_dashboard"))
+        return render_template("team_create.html")
+
+    @app.route("/team/join", methods=["GET", "POST"])
+    @login_required
+    def join_team():
+        """Show form to join team by invite code (GET) or add athlete to team (POST)."""
+        if not isinstance(current_user, Athlete):
+            return redirect(url_for("coach_dashboard"))
+        if request.method == "POST":
+            code = request.form.get("invite_code", "").strip().upper()
+            if not code:
+                flash("Please enter an invite code.", "error")
+                return render_template("join_team.html")
+            team = Team.query.filter_by(invite_code=code).first()
+            if not team:
+                flash("Invalid or unknown invite code.", "error")
+                return render_template("join_team.html")
+            if current_user.teams.filter(Team.id == team.id).first():
+                flash("You are already on this team.", "info")
+                return redirect(url_for("athlete_dashboard"))
+            team.athletes.append(current_user)
+            db.session.commit()
+            flash("You have joined the team.", "success")
+            return redirect(url_for("athlete_dashboard"))
+        return render_template("join_team.html")
+
     @app.route("/team/<int:team_id>")
     @login_required
     def team_dashboard(team_id):
@@ -348,50 +416,6 @@ def create_app(config_class=Config):
             group_member_ids=group_member_ids,
         )
 
-    @app.route("/coach/dashboard")
-    @login_required
-    def coach_dashboard():
-        """Coach dashboard: list of teams as cards/links. Redirect to team if only one."""
-        if not isinstance(current_user, Coach):
-            return redirect(url_for("athlete_dashboard"))
-        teams = current_user.teams.all()
-        if len(teams) == 1:
-            return redirect(url_for("team_dashboard", team_id=teams[0].id))
-        return render_template("coach_dashboard.html", teams=teams)
-
-    @app.route("/team/create", methods=["GET", "POST"])
-    @login_required
-    def create_team():
-        """Show form to create team (GET) or create team and persist (POST)."""
-        if not isinstance(current_user, Coach):
-            return redirect(url_for("athlete_dashboard"))
-        if request.method == "POST":
-            name = request.form.get("name", "").strip()
-            if not name:
-                flash("Team name is required.", "error")
-                return render_template("team_create.html")
-            team = Team(
-                name=name,
-                coach_id=current_user.id,
-                invite_code=Team.generate_invite_code(),
-            )
-            db.session.add(team)
-            db.session.commit()
-            flash("Team created successfully.", "success")
-            return redirect(url_for("coach_dashboard"))
-        return render_template("team_create.html")
-
-    @app.route("/athlete/dashboard")
-    @login_required
-    def athlete_dashboard():
-        """Athlete dashboard: list of teams as cards/links. Redirect to team if only one."""
-        if not isinstance(current_user, Athlete):
-            return redirect(url_for("coach_dashboard"))
-        teams = current_user.teams.all()
-        if len(teams) == 1:
-            return redirect(url_for("team_dashboard", team_id=teams[0].id))
-        return render_template("athlete_dashboard.html", teams=teams)
-
     @app.route("/team/<int:team_id>/roster")
     @login_required
     def team_roster(team_id):
@@ -431,30 +455,6 @@ def create_app(config_class=Config):
             athletes=athletes,
             team_names_by_athlete=team_names_by_athlete,
         )
-
-    @app.route("/team/join", methods=["GET", "POST"])
-    @login_required
-    def join_team():
-        """Show form to join team by invite code (GET) or add athlete to team (POST)."""
-        if not isinstance(current_user, Athlete):
-            return redirect(url_for("coach_dashboard"))
-        if request.method == "POST":
-            code = request.form.get("invite_code", "").strip().upper()
-            if not code:
-                flash("Please enter an invite code.", "error")
-                return render_template("join_team.html")
-            team = Team.query.filter_by(invite_code=code).first()
-            if not team:
-                flash("Invalid or unknown invite code.", "error")
-                return render_template("join_team.html")
-            if current_user.teams.filter(Team.id == team.id).first():
-                flash("You are already on this team.", "info")
-                return redirect(url_for("athlete_dashboard"))
-            team.athletes.append(current_user)
-            db.session.commit()
-            flash("You have joined the team.", "success")
-            return redirect(url_for("athlete_dashboard"))
-        return render_template("join_team.html")
 
     @app.route("/team/<int:team_id>/assignment/create", methods=["GET", "POST"])
     @login_required
